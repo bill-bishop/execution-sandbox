@@ -1,62 +1,54 @@
 # Sandboxed Environment with Flask API
 
-This project creates a sandboxed environment with endpoints to execute commands and manage files.
+This project creates a sandboxed environment with a Flask server running inside a Docker container. The server allows you to execute commands and interact with files in a controlled environment.
 
 ## Project Structure
 
 ```
 sandbox_project/
 ├── sandbox_server.py       # Flask server code
-├── Dockerfile              # Docker image definition for the sandbox
+├── Dockerfile              # Dockerfile for container setup
 ├── requirements.txt        # Python dependencies
-├── sandbox/                # Directory for sandbox files
-└── README.md               # Instructions for running the project
+└── README.md               # Setup instructions
 ```
 
 ## Setup Instructions
 
-### 1. Build the Sandbox Docker Image
+### 1. Build the Docker Image
 
-```bash
+Run the following command to build the Docker image:
+
 docker build -t sandbox .
-```
 
-### 2. Run the Flask Server
+### 2. Run the Docker Container
 
-Install dependencies and start the Flask server:
+Use the following command to start the container and expose the server:
 
-```bash
-pip install -r requirements.txt
-python sandbox_server.py
-```
+docker run -p 8080:8080 --rm sandbox
+
+This command runs the container, exposing the Flask server on port 8080.
 
 ### 3. Test the Endpoints
 
 #### Execute a Command
-```bash
-curl -X POST http://localhost:8080/execute -H "Content-Type: application/json" -d '{"command": "ls"}'
-```
+
+Use the following `curl` command to execute a command inside the container:
+
+curl -X POST http://localhost:8080/execute -H "Content-Type: application/json" -d "{\"command\": \"ls\"}"
 
 #### Read a File
-```bash
+
+To read a file inside the sandbox, use:
+
 curl "http://localhost:8080/read?filename=test.txt"
-```
 
 #### Write a File
-```bash
+
+To write a file to the sandbox:
+
 curl -X POST http://localhost:8080/write -H "Content-Type: application/json" -d '{"filename": "newfile.txt", "content": "Hello, Sandbox!"}'
-```
 
-### 4. Run the Sandbox Container
+## Notes
 
-You can run the Docker container for additional isolation:
-
-```bash
-docker run --name sandbox -d --rm sandbox
-```
-
-## Security Notes
-
-- Validate inputs to avoid path traversal attacks.
-- Limit command execution and enforce resource constraints.
-- Use non-root users to run the server and Docker container.
+- All commands and file interactions occur inside the container's `/sandbox` directory.
+- Ensure your Docker installation is properly set up and accessible. 

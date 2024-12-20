@@ -1,12 +1,14 @@
-FROM ubuntu:latest
+FROM python:3.10-slim
 
-# Install basic tools
-RUN apt-get update && apt-get install -y bash
-
-# Create a working directory
+# Set up the working directory
 WORKDIR /sandbox
 
-# Restrict permissions
-RUN chmod 700 /sandbox
+# Copy project files and install dependencies
+COPY . .
+RUN pip install -r requirements.txt
 
-CMD ["bash"]
+# Expose Flask server port
+EXPOSE 8080
+
+# Start the Flask server
+CMD ["python", "sandbox_server.py"]

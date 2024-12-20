@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-SANDBOX_DIR = "./sandbox"
+SANDBOX_DIR = "/sandbox"
 
 @app.route("/execute", methods=["POST"])
 def execute():
