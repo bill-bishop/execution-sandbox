@@ -15,11 +15,11 @@ def execute():
     # Ensure the command is run in the sandbox
     try:
         result = subprocess.run(
-            command, cwd=SANDBOX_DIR, shell=True, capture_output=True, text=True, timeout=5
+            command, cwd=SANDBOX_DIR, shell=True, capture_output=True, text=True, timeout=35
         )
         return jsonify({"stdout": result.stdout, "stderr": result.stderr, "returncode": result.returncode})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"stderr": str(e)}), 500
 
 @app.route("/read", methods=["GET"])
 def read_file():

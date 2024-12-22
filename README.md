@@ -2,128 +2,83 @@
 
 This project creates a sandboxed environment with a Flask server running inside a Docker container. The server allows you to execute commands and interact with files in a controlled environment.
 
-## Project Structure
+## Sandbox (with Flask interface) Setup Instructions
 
-```
-sandbox_project/
-├── nginx/
-│   ├── html/
-│   │   ├── index.html
-│   ├── nginx/
-│   │   ├── Dockerfile
-│   │   ├── nginx.conf
-├── ngrok/
-│   ├── Dockerfile
-├── sandbox/
-│   ├── test.txt
-├── Dockerfile
-├── README.md
-├── requirements.txt
-├── sandbox_server.py
-```
-
-## Setup Instructions
-
-### 1. Build the Docker Image
+#### Build
 
 Run the following command to build the Docker image:
 
-docker build -t sandbox .
+```bash
+docker build -t sandbox-server sandbox-server
+```
 
-### 2. Run the Docker Container
-
-Use the following command to start the container and expose the server:
-
-docker run -p 8080:8080 --rm sandbox
-
-This command runs the container, exposing the Flask server on port 8080.
-
-### 3. Test the Endpoints
+### 3. Test the Sandbox interface
 
 #### Execute a Command
 
 Use the following `curl` command to execute a command inside the container:
 
-curl -X POST [http://localhost:8080/execute](http://localhost:8080/execute) -H "Content-Type: application/json" -d "{"command": "ls"}"
+curl -X POST http://localhost:8080/execute -H "Content-Type: application/json" -d "{\"command\": \"ls\"}"
 
 #### Read a File
 
 To read a file inside the sandbox, use:
 
-curl "[http://localhost:8080/read?filename=test.txt](http://localhost:8080/read?filename=test.txt)"
+curl http://localhost:8080/read?filename=test.txt
 
-#### Write a File
-
-To write a file to the sandbox:
-
-curl -X POST [http://localhost:8080/write](http://localhost:8080/write) -H "Content-Type: application/json" -d '{"filename": "newfile.txt", "content": "Hello, Sandbox!"}'
-
-### Nginx Setup Instructions
-
-#### 1. Build the Nginx Docker Image
-
-Navigate to the `nginx` folder:
-
-```bash
-cd nginx
-```
-
-Run the following command to build the Nginx Docker image:
-
-```bash
-docker build -t my-nginx-server .
-```
-
-#### 2. Run the Nginx Server with Volume Mapping
-
-Run the following command to start the Nginx container, mounting the `html` directory as a volume:
-
-##### PowerShell Example
-
-```bash
-docker run --rm -d -p 8081:80 -v ${PWD}/html:/usr/share/nginx/html nginx
-```
-
-##### Command Prompt Example
-
-```cmd
-docker run --rm -d -p 8081:80 -v %CD%\html:/usr/share/nginx/html nginx
-```
 
 #### 3. Test the Nginx Server
 
 - Visit: [http://localhost:8081](http://localhost:8081) to view the default page.
 - Update or add files in the `html` directory while the container is running to see changes immediately.
 
-### Ngrok Setup Instructions
+#### Write a File
 
-#### Run Ngrok in Host Mode or Same-Network Container
+To write a file to the sandbox:
 
-To expose your server to the internet using Ngrok, you must either run the Ngrok container in host mode or route it to a container on the same Docker network as the server.
+curl -X POST http://localhost:8080/write -H "Content-Type: application/json" -d '{"filename": "newfile.txt", "content": "Hello, Sandbox!"}'
 
-##### Host Mode Example
+### Terminal UI + Nginx Router Setup Instructions
 
-Run the Ngrok container in host mode to access a server running on the host machine:
+#### Build
+Run the following command to build the Nginx Docker image:
 
 ```bash
-docker run --rm --network host my-ngrok ngrok http localhost:8081
+docker build -t terminal terminal
 ```
 
-##### Same-Network Example
 
-If the server is in a Docker container, ensure both Ngrok and the server are on the same Docker network:
+### Ngrok Setup Instructions
+
+#### Build
+
+Your ngrok container must have a `/home/ngrok/.ngrok2/ngrok.yml` file with your ngrok authtoken, or you must run `add-authtoken` in the container.
+
+You can use a temporary container to create a base image `ngrok-auth:latest` with your auth token:
+
+```bash
+docker run --name temp-ngrok wernight/ngrok ngrok config add-authtoken <your-ngrok-auth-token>
+docker commit temp-ngrok ngrok-auth
+docker rm temp-ngrok
+```
+
+##### Run Containers Within Same Network
 
 1. Create a shared network:
    ```bash
    docker network create sandbox-net
    ```
-2. Start the server in this network:
+2. Start the python sandbox server in this network, and mount the ./sandbox volume to /sandbox 
    ```bash
-   docker run --rm --network sandbox-net --name sandbox-server -p 8081:80 my-nginx-server
+   docker run --rm -d --network sandbox-net --name sandbox-server -v %CD%/sandbox:/sandbox sandbox-server:latest
    ```
-3. Start Ngrok in the same network:
+4. Start the Nginx router in this network:
    ```bash
-   docker run --rm --network sandbox-net my-ngrok ngrok http sandbox-server:80
+   docker run --rm -d --network sandbox-net --name terminal terminal:latest
+   ```
+4. Start Ngrok in the same network (in interactive mode so you can get the random url):
+   ```bash
+   docker run --rm -it --network sandbox-net --name ngrok-auth ngrok-auth:latest ngrok http sandbox-router:80
    ```
 
 ## Notes
