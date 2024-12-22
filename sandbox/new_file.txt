@@ -1,0 +1,1 @@
+This is a new file created to demonstrate the writeFile API functionality.

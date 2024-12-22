@@ -8,7 +8,7 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./html /usr/share/nginx/html
 
 # Expose port 80 for the Nginx server
-EXPOSE 80
+# EXPOSE 80
 
 # Start Nginx server
 CMD ["nginx", "-g", "daemon off;"]

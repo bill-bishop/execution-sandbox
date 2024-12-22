@@ -84,68 +84,6 @@ input {
     </style>
 </head>
 <body>
-    <div class="terminal">
-        <div id="output" class="output" target="input">
-            <!-- Terminal output will appear here -->
-        </div>
-        <div class="input-area">
-            <span class="prompt">&gt;</span>
-            <input id="input" type="text" autofocus autocomplete="off">
-        </div>
-    </div>
-
-    <script>
-        const input = document.getElementById('input');
-        const output = document.getElementById('output');
-
-        output.addEventListener('click', function () {
-            input.focus();
-        });
-
-        input.addEventListener('keydown', async function (e) {
-            if (e.key === 'Enter') {
-                const command = input.value.trim();
-
-                if (command) {
-                    // Append the command to the output
-                    const commandElement = document.createElement('div');
-                    commandElement.textContent = `> ${command}`;
-                    output.appendChild(commandElement);
-
-                    // Post the command to the /api/execute API
-                    try {
-                        const response = await fetch('/api/execute', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ command })
-                        });
-
-                        const result = await response.json();
-
-                        // Append the result to the output
-                        const responseElement = document.createElement('div');
-                        if (result.stderr) {
-                            responseElement.innerHTML = `<div class="error">${result.stderr.replace(/\n/g, '<br>')}</div>`;
-                        } else {
-                            responseElement.innerHTML = `${result.stdout.replace(/\n/g, '<br>')}`;
-                        }
-                        output.appendChild(responseElement);
-                    } catch (error) {
-                        const errorElement = document.createElement('div');
-                        errorElement.textContent = `Error: Unable to reach the server.`;
-                        output.appendChild(errorElement);
-                    }
-
-                    // Scroll to the bottom
-                    output.scrollTop = output.scrollHeight;
-                }
-
-                // Clear the input
-                input.value = '';
-            }
-        });
-    </script>
+    Hi :)
 </body>
 </html>
