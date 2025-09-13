@@ -1,0 +1,25 @@
+2024-12-23 07:36:30 - Test Started: Navigating to ProtonMail
+2024-12-23 07:36:42 - Test Failed with Exception: Message: 
+
+2024-12-23 07:36:42 - Test Finished: WebDriver session closed.
+2024-12-23 17:06:44 - Test Started: Navigating to ProtonMail
+2024-12-23 17:06:45 - Step 1: Captured screenshot after navigating to ProtonMail home page.
+2024-12-23 17:06:55 - Test Failed with Exception: Message: 
+
+2024-12-23 17:06:55 - Captured error page screenshot and HTML.
+2024-12-23 17:06:55 - Test Finished: WebDriver session closed.
+2024-12-23 17:17:11 - Test Started: Navigating to ProtonMail
+2024-12-23 17:17:13 - Step 1: Captured screenshot after navigating to ProtonMail home page.
+2024-12-23 17:17:22 - Test Failed with Exception: Message: unknown error: session deleted because of page crash
+from unknown error: cannot determine loading status
+from tab crashed
+  (Session info: chrome=131.0.6778.204)
+
+2024-12-23 17:17:22 - Test Finished: WebDriver session closed.
+2024-12-23 17:17:53 - Test Started: Navigating to ProtonMail
+2024-12-23 17:17:55 - Step 1: Captured screenshot after navigating to ProtonMail home page.
+2024-12-23 17:17:55 - Step 2: Clicked 'Create a free account' and navigated to signup page.
+2024-12-23 17:18:06 - Test Failed with Exception: Message: 
+
+2024-12-23 17:18:06 - Captured error page screenshot and HTML.
+2024-12-23 17:18:06 - Test Finished: WebDriver session closed.

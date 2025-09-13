@@ -1,3 +1,5 @@
 .env 
-ngrok.ymlnode_modules 
+ngrok.yml
+node_modules 
 .token 
+.idea  

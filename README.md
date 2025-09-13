@@ -70,11 +70,11 @@ docker rm temp-ngrok
    ```
 2. Start the python sandbox server in this network, and mount the ./sandbox volume to /sandbox 
    ```bash
-   docker run --rm -d --network sandbox-net --name sandbox-server -v %CD%/sandbox:/sandbox sandbox-server:latest
+   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/sandbox:/sandbox sandbox-server:latest
    ```
 4. Start the Nginx router in this network:
    ```bash
-   docker run --rm -d --network sandbox-net --name terminal terminal:latest
+   docker run --rm -d --network sandbox-net --name sandbox-router terminal:latest
    ```
 4. Start Ngrok in the same network (in interactive mode so you can get the random url):
    ```bash

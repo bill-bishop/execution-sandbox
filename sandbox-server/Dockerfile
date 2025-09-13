@@ -17,5 +17,7 @@ COPY . /sandbox/sandbox-server
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+EXPOSE 8080
+
 # Start the Flask server
 CMD ["python", "app.py"]

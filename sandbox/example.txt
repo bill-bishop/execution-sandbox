@@ -1,1 +1,1 @@
-This is an example content written to demonstrate the writeFile API.
+This is a test content for the writeFile API operation.
