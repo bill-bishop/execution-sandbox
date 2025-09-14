@@ -15,9 +15,9 @@ COPY . /sandbox/sandbox-server
 # for now ... I'll build from above, copy the ./sandbox-server/sandbox_server.py file into ./sandbox/ and continue as is, ensuring this file is building the server code from ./sandbox-server/ 
 # then, once BAU is restored, i'll fix this baloney
 
-RUN pip install --no-cache-dir -r requirements.txt
-
 EXPOSE 8080
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Start the Flask server
 CMD ["python", "app.py"]
