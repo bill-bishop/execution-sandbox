@@ -8,3 +8,4 @@ open_spiel
 __pycache__
 tmp
 writing-projects
+logs
