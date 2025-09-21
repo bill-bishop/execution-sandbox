@@ -25,87 +25,16 @@ paths:
               properties:
                 command:
                   type: string
-                  description: The bash command to execute.
               required:
                 - command
       responses:
         '200':
           description: Successfully executed the command.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  returncode:
-                    type: integer
-                    description: Exit code of the executed command.
-                  stdout:
-                    type: string
-                    description: Standard output from the command execution.
-                  stderr:
-                    type: string
-                    description: Standard error from the command execution.
-                  message:
-                    type: string
-                    description: >
-                      A formatted response embedding the input command and its output
-                      in code blocks. The GPT should include this field verbatim at the start of its response.
-        '401':
-          description: Unauthorized – Missing or invalid API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message.
-  /api/read:
-    get:
-      operationId: readFile
-      summary: Read the content of a file.
-      description: Fetches the content of a file from the sandbox directory.
-      security:
-        - apiKeyAuth: []
-      parameters:
-        - name: filename
-          in: query
-          required: true
-          schema:
-            type: string
-            description: The name of the file to read.
-      responses:
-        '200':
-          description: Successfully read the file.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  content:
-                    type: string
-                    description: The content of the file.
-        '400':
-          description: Bad Request – No filename provided.
-        '404':
-          description: File Not Found – The requested file does not exist.
-        '401':
-          description: Unauthorized – Missing or invalid API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message.
-        '500':
-          description: Internal Server Error – An error occurred while reading the file.
-  /api/write:
+  /api/execute-async:
     post:
-      operationId: writeFile
-      summary: Write content to a file using JSON input.
-      description: Creates or overwrites a file in the sandbox directory with the specified filename and content provided in the request body.
+      operationId: executeCommandAsync
+      summary: Execute a bash command asynchronously.
+      description: Starts a command in the background and returns a job ID.
       security:
         - apiKeyAuth: []
       requestBody:
@@ -115,62 +44,97 @@ paths:
             schema:
               type: object
               properties:
-                filename:
+                command:
                   type: string
-                  description: The name of the file to write.
-                content:
+                pwd:
                   type: string
-                  description: The content to write to the file.
               required:
-                - filename
-                - content
+                - command
+      responses:
+        '202':
+          description: Job accepted.
+  /api/execute-async/status/{job_id}:
+    get:
+      operationId: getJobStatus
+      summary: Get the status of an async job.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: Successfully wrote to the file.
+          description: Job status.
+  /api/execute-async/log/{job_id}:
+    get:
+      operationId: getJobLog
+      summary: Get the log output of an async job.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job log.
+  /api/read:
+    get:
+      operationId: readFile
+      summary: Read the content of a file.
+      parameters:
+        - name: filename
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully read the file.
+  /api/read-partial:
+    get:
+      operationId: readPartial
+      summary: Read part of a file with offset and limit.
+      description: Fetches a chunk of file content starting at the given offset.
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: filename
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully read partial content.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
+                  content:
                     type: string
-                    description: Status of the write operation (e.g., "success").
-        '400':
-          description: Bad Request – Missing filename or content in the request body.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: The error message.
-        '401':
-          description: Unauthorized – Missing or invalid API key.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: Error message.
-        '500':
-          description: Internal Server Error – An error occurred while writing to the file.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    description: The error message.
+                  offset:
+                    type: integer
+                  nextOffset:
+                    type: integer
+                  eof:
+                    type: boolean
 components:
   securitySchemes:
     apiKeyAuth:
       type: apiKey
       in: header
       name: API-Key
-      description: >
-        To authenticate requests, include an `API-Key` header with your assigned key.
   schemas: {}
