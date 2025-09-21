@@ -1,0 +1,140 @@
+openapi: 3.1.0
+info:
+  title: Sandbox API
+  description: A unified API for executing commands, reading files, and writing files in a sandboxed environment.
+  version: 1.0.0
+  x-openai:
+    privacy_policy_url: https://bill-bishop.github.io/execution-sandbox/privacy-policy.txt
+servers:
+  - url: https://9ae1e1744f73.ngrok-free.app
+    description: Public-facing sandbox API
+paths:
+  /api/execute:
+    post:
+      operationId: executeCommand
+      summary: Execute a bash command.
+      description: Accepts a bash command as input and executes it in the sandbox environment.
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                command:
+                  type: string
+              required:
+                - command
+      responses:
+        '200':
+          description: Successfully executed the command.
+  /api/execute-async:
+    post:
+      operationId: executeCommandAsync
+      summary: Execute a bash command asynchronously.
+      description: Starts a command in the background and returns a job ID.
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                command:
+                  type: string
+                pwd:
+                  type: string
+              required:
+                - command
+      responses:
+        '202':
+          description: Job accepted.
+  /api/execute-async/status/{job_id}:
+    get:
+      operationId: getJobStatus
+      summary: Get the status of an async job.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status.
+  /api/execute-async/log/{job_id}:
+    get:
+      operationId: getJobLog
+      summary: Get the log output of an async job.
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job log.
+  /api/read:
+    get:
+      operationId: readFile
+      summary: Read the content of a file.
+      parameters:
+        - name: filename
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully read the file.
+  /api/read-partial:
+    get:
+      operationId: readPartial
+      summary: Read part of a file with offset and limit.
+      description: Fetches a chunk of file content starting at the given offset.
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: filename
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successfully read partial content.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
+                  offset:
+                    type: integer
+                  nextOffset:
+                    type: integer
+                  eof:
+                    type: boolean
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: API-Key
+  schemas: {}
