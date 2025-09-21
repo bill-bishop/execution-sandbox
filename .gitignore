@@ -3,3 +3,8 @@ ngrok.yml
 node_modules 
 .token 
 .idea  
+krukar-sandbox/storyteller
+open_spiel
+__pycache__
+tmp
+writing-projects
