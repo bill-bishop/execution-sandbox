@@ -18,33 +18,42 @@ Run the following command to build the Nginx router Docker image:
 docker build -t terminal terminal
 ```
 
-##### Ngrok
+##### Cloudflare Tunnel Setup
 
-Make an account at http://ngrok.com and retrieve your authtoken.
+Expose your local Nginx server via a Cloudflare Tunnel. Make sure you have a Cloudflare account and a domain managed by Cloudflare.
 
-Run an interactive root shell using the `wernight/ngrok` docker base image:
+1. Install `cloudflared` and log in:
+   ```powershell
+   cloudflared login
+   ```
+   This will open a browser window to authenticate with Cloudflare and save your credentials locally.
 
-```bash
-docker run -it --name temp-ngrok wernight/ngrok sh
-```
+2. Create a new tunnel:
+   ```powershell
+   cloudflared tunnel create dropcode-tunnel
+   ```
+   This will generate a credentials JSON file in your `.cloudflared` directory. Keep this file secret.
 
-Then update ngrok:
+3. Route the tunnel to your domain:
+   ```powershell
+   cloudflared tunnel route dns dropcode-tunnel <your-domain>
+   ```
+   If the DNS record already exists, you may need to delete or update it manually in the Cloudflare dashboard.
 
-```bash
-ngrok update
-```
+4. Create a `config.yml` file in your `.cloudflared` directory:
+   ```yaml
+   tunnel: dropcode-tunnel
 
-Then add your authtoken:
+   ingress:
+     - hostname: <your-domain>
+       service: http://sandbox-router:80
+     - service: http_status:404
+   ```
 
-```bash
-ngrok config add-authtoken <your-ngrok-auth-token>
-```
-
-Before `exit`ing the interactive shell, run this outside it to commit the now updated & authorized ngrok image:
-
-```bash
-docker commit temp-ngrok ngrok-auth
-```
+5. Run the tunnel:
+   ```powershell
+   cloudflared tunnel run dropcode-tunnel
+   ```
 
 ##### Run Containers Within Same Network
 
@@ -52,16 +61,13 @@ docker commit temp-ngrok ngrok-auth
    ```bash
    docker network create sandbox-net
    ```
-2. Start the python sandbox server in this network, and mount the ./sandbox volume (or any desired folder to use as the /sandbox mounted drive) to /sandbox 
+2. Start the python sandbox server in this network, and mount the ./sandbox volume (or any desired folder to use as the /sandbox mounted drive) to /sandbox:
    ```bash
    docker run --rm -d --network sandbox-net --name sandbox -v %CD%/sandbox:/sandbox sandbox-server:latest
    ```
-4. Start the Nginx router in this network:
+3. Start the Nginx router in this network, exposing port 80:
    ```bash
-   docker run --rm -d --network sandbox-net --name sandbox-router terminal:latest
-   ```
-4. Start Ngrok in the same network (in interactive mode so you can get the random url):
-   ```bash
-   docker run --rm -it --network sandbox-net --name ngrok-auth ngrok-auth:latest ngrok http sandbox-router:80
+   docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:latest
    ```
 
+Now your sandbox is accessible through your public domain secured by Cloudflare Tunnel.
