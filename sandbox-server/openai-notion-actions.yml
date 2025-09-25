@@ -1,0 +1,353 @@
+openapi: 3.1.0
+info:
+  title: Notion Task Workflows
+  version: "1.0.0"
+  description: |
+    Minimal OpenAPI spec for working with tasks in Notion.
+    Supports searching for the tasks database, querying tasks,
+    creating/updating tasks, adding comments, and listing users.
+
+servers:
+  - url: https://api.notion.com/v1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: NotionIntegrationToken
+  schemas:
+    TaskProperties:
+      type: object
+      description: Standard properties used in a tasks database.
+      properties:
+        Name:
+          type: object
+          properties:
+            title:
+              type: array
+              items:
+                type: object
+                properties:
+                  text:
+                    type: object
+                    properties:
+                      content:
+                        type: string
+        Status:
+          type: object
+          properties:
+            status:
+              type: object
+              properties:
+                name:
+                  type: string
+        Assignee:
+          type: object
+          properties:
+            people:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: Notion user ID
+        Due:
+          type: object
+          properties:
+            date:
+              type: object
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type:
+                    - string
+                    - "null"
+                  format: date-time
+        Priority:
+          type: object
+          properties:
+            select:
+              type: object
+              properties:
+                name:
+                  type: string
+        Tags:
+          type: object
+          properties:
+            multi_select:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+        URL:
+          type: object
+          properties:
+            url:
+              type: string
+              format: uri
+        Notes:
+          type: object
+          properties:
+            rich_text:
+              type: array
+              items:
+                type: object
+                properties:
+                  text:
+                    type: object
+                    properties:
+                      content:
+                        type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /search:
+    post:
+      operationId: notionSearch
+      summary: Search for a database or page
+      description: Use this to find your tasks database by name (e.g., "Tasks").
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+          description: Required Notion API version header.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                  example: "Tasks"
+                filter:
+                  type: object
+                  example:
+                    property: object
+                    value: database
+      responses:
+        "200":
+          description: Search results
+
+  /databases/{database_id}:
+    get:
+      operationId: getDatabase
+      summary: Get database schema
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+        - name: database_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Database object
+
+  /databases/{database_id}/query:
+    post:
+      operationId: queryTasks
+      summary: Query tasks with filters, sorts, and pagination
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+        - name: database_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: object
+                sorts:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      property:
+                        type: string
+                      direction:
+                        type: string
+                        enum: [ascending, descending]
+                start_cursor:
+                  type: string
+                page_size:
+                  type: integer
+                  default: 25
+      responses:
+        "200":
+          description: List of matching task pages
+
+  /pages:
+    post:
+      operationId: createTask
+      summary: Create a new task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [parent, properties]
+              properties:
+                parent:
+                  type: object
+                  required: [database_id]
+                  properties:
+                    database_id:
+                      type: string
+                properties:
+                  $ref: '#/components/schemas/TaskProperties'
+      responses:
+        "200":
+          description: Created task page
+
+  /pages/{page_id}:
+    get:
+      operationId: getTask
+      summary: Get a single task by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+        - name: page_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task object
+    patch:
+      operationId: updateTask
+      summary: Update task properties
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+        - name: page_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                properties:
+                  $ref: '#/components/schemas/TaskProperties'
+      responses:
+        "200":
+          description: Updated task
+
+  /comments:
+    post:
+      operationId: commentOnTask
+      summary: Append a comment to a task
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [parent, rich_text]
+              properties:
+                parent:
+                  type: object
+                  properties:
+                    page_id:
+                      type: string
+                rich_text:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      text:
+                        type: object
+                        properties:
+                          content:
+                            type: string
+      responses:
+        "200":
+          description: Created comment
+
+  /users:
+    get:
+      operationId: listUsers
+      summary: List Notion users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Notion-Version
+          in: header
+          required: true
+          schema:
+            type: string
+            example: "2022-06-28"
+      responses:
+        "200":
+          description: List of users
