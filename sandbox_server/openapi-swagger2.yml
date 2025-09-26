@@ -8,13 +8,52 @@ basePath: /
 schemes:
   - http
 paths:
+  /execute:
+    post:
+      summary: Execute a bash command (wrapper).
+      description: |
+        Wrapper endpoint that triggers `/execute/worker` to run the command, but does not wait for full completion.
+        Instead, it waits a few seconds and returns initial output along with job metadata.
+        Full output continues streaming via WebSocket at `/ws/workspace`.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required:
+              - command
+            properties:
+              command:
+                type: string
+              pwd:
+                type: string
+      responses:
+        '200':
+          description: Initial execution response.
+          schema:
+            type: object
+            properties:
+              job_id:
+                type: string
+              command:
+                type: string
+              returncode:
+                type: integer
+              stdout:
+                type: string
+      security:
+        - apiKeyAuth: []
   /execute/worker:
     post:
-      summary: Execute a bash command.
+      summary: Execute a bash command (worker).
       description: |
-        Accepts a bash command as input and executes it in the sandbox environment.
-        Execution runs inside a PTY for true terminal-like behavior. Output is streamed as events via the WebSocket at `/ws/workspace`.
-        The synchronous JSON response includes the job_id, return code, and the first 50KB of stdout/stderr.
+        Executes a bash command in the sandbox environment.
+        Runs inside a PTY for terminal-like behavior.
+        Output is streamed as events via the WebSocket at `/ws/workspace`.
+        Response blocks until process completion.
       consumes:
         - application/json
       parameters:

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flasgger import Swagger
-from .routes import execute_worker, read_file, write_file, read_partial, workspace, ws
+from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws
 from .config import API_KEY
 from .socket import socketio
 
@@ -26,6 +26,7 @@ swagger = Swagger(app, template_file="openapi-swagger2.yml")
 #         return jsonify({"error": "Unauthorized"}), 401
 
 # Register Blueprints
+app.register_blueprint(execute.bp)
 app.register_blueprint(execute_worker.bp)
 app.register_blueprint(read_file.bp)
 app.register_blueprint(write_file.bp)
