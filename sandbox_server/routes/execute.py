@@ -20,9 +20,15 @@ def execute_wrapper():
     job_id = str(uuid.uuid4())
 
     q = queue.Queue()
+    result = {"returncode": None}
 
     def on_output(line):
         q.put(line)
+
+    def runner():
+        rc, _ = run_command(job_id, command, pwd, on_output)
+        result["returncode"] = rc
+        q.put(None)  # signal completion
 
     # Log command event right away
     command_event = workspace_log.append_event({
@@ -33,26 +39,30 @@ def execute_wrapper():
     })
 
     # Run worker in background thread
-    thread = threading.Thread(
-        target=run_command,
-        args=(job_id, command, pwd, on_output),
-        daemon=True,
-    )
+    thread = threading.Thread(target=runner, daemon=True)
     thread.start()
 
-    # Collect lines for a few seconds
+    # Collect lines for up to 3 seconds or until completion
     lines = []
     start = time.time()
+    finished = False
     while time.time() - start < 3:
         try:
             line = q.get(timeout=0.2)
+            if line is None:  # completion signal
+                finished = True
+                break
             lines.append(line)
         except queue.Empty:
             continue
+
+    # Add cut-off marker if still running
+    if not finished:
+        lines.append("--- Process still running ---")
 
     return jsonify({
         "job_id": job_id,
         "command": command,
         "stdout": "\n".join(lines),
-        "returncode": None,  # still running
+        "returncode": result["returncode"],
     })
