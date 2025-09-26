@@ -1,8 +1,0 @@
-To: receiver@test.com
-From: sender@test.com
-Content:
-Subject: Test
-
-This is a test email.
-
-
