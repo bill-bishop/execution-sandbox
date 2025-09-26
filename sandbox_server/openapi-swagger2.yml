@@ -1,0 +1,133 @@
+swagger: '2.0'
+info:
+  title: Sandbox API
+  description: A unified API for executing commands, reading files, writing files, and viewing logs in a sandboxed environment.
+  version: 2.0.0
+host: localhost:8080
+basePath: /
+schemes:
+  - http
+paths:
+  /execute:
+    post:
+      summary: Execute a bash command.
+      description: |
+        Accepts a bash command as input and executes it in the sandbox environment.
+        Execution runs inside a PTY for true terminal-like behavior. Output is streamed as events via the WebSocket at `/ws/workspace`.
+        The synchronous JSON response includes the job_id, return code, and the first 50KB of stdout/stderr.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required:
+              - command
+            properties:
+              command:
+                type: string
+              pwd:
+                type: string
+      responses:
+        '200':
+          description: Successfully executed the command.
+          schema:
+            type: object
+            properties:
+              job_id:
+                type: string
+              command:
+                type: string
+              returncode:
+                type: integer
+              stdout:
+                type: string
+              stderr:
+                type: string
+      security:
+        - apiKeyAuth: []
+  /workspace/logs:
+    get:
+      summary: Get a slice of the workspace log buffer.
+      description: |
+        Returns recent command and output events from the shared workspace log.
+        Use this endpoint to fetch history, while `/ws/workspace` provides live streaming.
+      parameters:
+        - name: offset
+          in: query
+          type: integer
+          required: false
+          description: Absolute or negative offset (e.g. -20 for last 20 entries).
+        - name: limit
+          in: query
+          type: integer
+          required: false
+          description: Max number of events to return (default 100).
+      responses:
+        '200':
+          description: Workspace log slice.
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                seq_id:
+                  type: integer
+                type:
+                  type: string
+                  enum: [command, output]
+                command:
+                  type: string
+                stream:
+                  type: string
+                line:
+                  type: string
+  /read:
+    get:
+      summary: Read the content of a file.
+      parameters:
+        - name: filename
+          in: query
+          type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully read the file.
+  /read-partial:
+    get:
+      summary: Read part of a file with offset and limit.
+      description: Fetches a chunk of file content starting at the given offset.
+      parameters:
+        - name: filename
+          in: query
+          type: string
+          required: true
+        - name: offset
+          in: query
+          type: integer
+          required: false
+        - name: limit
+          in: query
+          type: integer
+          required: false
+      responses:
+        '200':
+          description: Successfully read partial content.
+          schema:
+            type: object
+            properties:
+              content:
+                type: string
+              offset:
+                type: integer
+              nextOffset:
+                type: integer
+              eof:
+                type: boolean
+securityDefinitions:
+  apiKeyAuth:
+    type: apiKey
+    name: API-Key
+    in: header
