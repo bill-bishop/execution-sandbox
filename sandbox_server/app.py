@@ -1,14 +1,16 @@
 from flask import Flask, request, jsonify
-from routes import execute, read_file, write_file, execute_async, read_partial
-from config import API_KEY
+from .routes import execute, read_file, write_file, read_partial, workspace, ws
+from .config import API_KEY
+from .socket import socketio
 
 app = Flask(__name__)
+socketio.init_app(app, cors_allowed_origins="*")
 
 # Middleware for API key authentication
 @app.before_request
 def authenticate():
-    if request.path.startswith("/static"):
-        return  # Skip static files
+    if request.path.startswith("/static") or request.path.startswith("/ws"):
+        return  # Skip static files and websocket
 
     key = request.headers.get("API-Key")
     if key != API_KEY:
@@ -18,8 +20,11 @@ def authenticate():
 app.register_blueprint(execute.bp)
 app.register_blueprint(read_file.bp)
 app.register_blueprint(write_file.bp)
-app.register_blueprint(execute_async.bp)
 app.register_blueprint(read_partial.bp)
+app.register_blueprint(workspace.bp)
+
+# Initialize WebSocket namespace
+ws.init_socketio(socketio)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    socketio.run(app, host="0.0.0.0", port=8080)

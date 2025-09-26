@@ -1,5 +1,6 @@
 import os
-from app import app
+from sandbox_server import app
+from sandbox_server import app
 
 def test_read_file_valid_key():
     test_file = "/sandbox/test_read.txt"

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: Sandbox API
-  description: A unified API for executing commands, reading files, and writing files in a sandboxed environment.
-  version: 1.0.0
+  description: A unified API for executing commands, reading files, writing files, and viewing logs in a sandboxed environment.
+  version: 2.0.0
   x-openai:
     privacy_policy_url: https://bill-bishop.github.io/execution-sandbox/privacy-policy.txt
 servers:
@@ -13,28 +13,10 @@ paths:
     post:
       operationId: executeCommand
       summary: Execute a bash command.
-      description: Accepts a bash command as input and executes it in the sandbox environment.
-      security:
-        - apiKeyAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                command:
-                  type: string
-              required:
-                - command
-      responses:
-        '200':
-          description: Successfully executed the command.
-  /api/execute-async:
-    post:
-      operationId: executeCommandAsync
-      summary: Execute a bash command asynchronously.
-      description: Starts a command in the background and returns a job ID.
+      description: |
+        Accepts a bash command as input and executes it in the sandbox environment.
+        Execution runs inside a PTY for true terminal-like behavior. Output is streamed as events via the WebSocket at `/ws/workspace`.
+        The synchronous JSON response includes the job_id, return code, and the first 50KB of stdout/stderr.
       security:
         - apiKeyAuth: []
       requestBody:
@@ -51,34 +33,64 @@ paths:
               required:
                 - command
       responses:
-        '202':
-          description: Job accepted.
-  /api/execute-async/status/{job_id}:
+        '200':
+          description: Successfully executed the command.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  command:
+                    type: string
+                  returncode:
+                    type: integer
+                  stdout:
+                    type: string
+                  stderr:
+                    type: string
+  /api/workspace/logs:
     get:
-      operationId: getJobStatus
-      summary: Get the status of an async job.
+      operationId: getWorkspaceLogs
+      summary: Get a slice of the workspace log buffer.
+      description: |
+        Returns recent command and output events from the shared workspace log.
+        Use this endpoint to fetch history, while `/ws/workspace` provides live streaming.
       parameters:
-        - name: job_id
-          in: path
-          required: true
+        - name: offset
+          in: query
+          required: false
           schema:
-            type: string
+            type: integer
+          description: Absolute or negative offset (e.g. -20 for last 20 entries).
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Max number of events to return (default 100).
       responses:
         '200':
-          description: Job status.
-  /api/execute-async/log/{job_id}:
-    get:
-      operationId: getJobLog
-      summary: Get the log output of an async job.
-      parameters:
-        - name: job_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Job log.
+          description: Workspace log slice.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    seq_id:
+                      type: integer
+                    type:
+                      type: string
+                      enum: [command, output]
+                    command:
+                      type: string
+                    stream:
+                      type: string
+                    line:
+                      type: string
   /api/read:
     get:
       operationId: readFile

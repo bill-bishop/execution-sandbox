@@ -1,5 +1,6 @@
 import os
-from app import app
+from sandbox_server import app
+from sandbox_server import app
 
 def test_write_file_valid_key():
     client = app.test_client()

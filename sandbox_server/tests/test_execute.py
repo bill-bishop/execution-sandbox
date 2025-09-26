@@ -1,4 +1,5 @@
-from app import app
+import os
+from sandbox_server import app
 
 def test_execute_valid_key():
     client = app.test_client()

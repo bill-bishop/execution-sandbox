@@ -1,5 +1,6 @@
 import os
-from app import app
+from sandbox_server import app
+from sandbox_server import app
 
 client = app.test_client()
 headers = {"API-Key": "default-secret-key"}
