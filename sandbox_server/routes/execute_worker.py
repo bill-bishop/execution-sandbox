@@ -11,7 +11,8 @@ bp = Blueprint("execute", __name__, url_prefix="/execute")
 SANDBOX_DIR = "/sandbox"
 BUFFER_LIMIT = 50 * 1024  # 50 KB
 
-@bp.route("", methods=["POST"])
+
+@bp.route("/worker", methods=["POST"])
 def execute():
     data = request.get_json()
     if not data:
@@ -77,7 +78,7 @@ def execute():
             if len(stdout_buf) < BUFFER_LIMIT:
                 stdout_buf += chunk
 
-        process.wait(timeout=60)
+        process.wait(timeout=5)
         os.close(master_fd)
 
         return jsonify({

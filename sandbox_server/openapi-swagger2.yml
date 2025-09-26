@@ -8,7 +8,7 @@ basePath: /
 schemes:
   - http
 paths:
-  /execute:
+  /execute/worker:
     post:
       summary: Execute a bash command.
       description: |
