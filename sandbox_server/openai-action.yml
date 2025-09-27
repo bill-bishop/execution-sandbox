@@ -14,14 +14,8 @@ paths:
       operationId: executeCommand
       summary: Execute a bash command (non-blocking wrapper).
       description: |
-        Starts execution of a bash command in the sandbox environment.
-        Runs inside a PTY for terminal-like behavior.
-
-        This endpoint does not wait for full completion. Instead, it returns quickly
-        (after a few seconds) with initial output and a `job_id`.
-
-        Full output continues streaming via WebSocket at `/ws/workspace`,
-        or can be retrieved incrementally using `/api/workspace/logs`.
+        Starts execution of a bash command in the sandbox environment. Returns quickly
+        (after a few seconds) with initial output and a `job_id`. Full output can be retrieved incrementally using `/api/workspace/logs`.
       security:
         - apiKeyAuth: []
       requestBody:

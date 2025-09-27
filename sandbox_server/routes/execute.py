@@ -44,7 +44,7 @@ def execute_wrapper():
     lines = []
     start = time.time()
     finished = False
-    while time.time() - start < 3:
+    while time.time() - start < 10:
         try:
             line = q.get(timeout=0.2)
             if line is None:  # completion signal
