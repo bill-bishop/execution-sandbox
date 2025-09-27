@@ -5,33 +5,35 @@ The DropCode Sandbox Server provides a controlled environment where OpenAI agent
 
 ## Execution Model
 
-### `/execute`
-- The single endpoint for all command execution (synchronous + streaming).
+### `/api/execute`
+- The **only execution endpoint** exposed to OpenAI agents.
 - Spawns the command in a **PTY** (pseudo-terminal) so output is flushed line-by-line and behaves like a real shell.
 - Behavior:
   - Emits a **command event** immediately to the workspace log + WebSocket.
   - Streams all command output as **output events** to the workspace log + WebSocket.
-  - Buffers the first 50 KB of output for inclusion in the synchronous JSON response.
-- Returns JSON after process completion:
+  - Returns quickly (within a few seconds) with:
+    - Job metadata.
+    - Partial output collected so far.
+    - `returncode = null` if the process is still running.
+- Example response:
   ```json
   {
     "job_id": "...",
-    "command": "echo hello",
-    "returncode": 0,
-    "stdout": "hello\n",
-    "stderr": ""
+    "command": "pytest -q",
+    "returncode": null,
+    "stdout": "collected 2 items...\n--- Process still running, more output will stream via WebSocket ---"
   }
   ```
-- Note: Because PTY merges streams, `stderr` will usually be empty. All output appears in `stdout` and the event stream.
+- Full output continues streaming via WebSocket or can be pulled from `/api/workspace/logs`.
 
 ### Deprecated Endpoints
-- `/execute-async` and `/execute-async/status` are deprecated.
-- All executions should now use `/execute`.
+- `/execute-async`, `/execute-async/status`, and `/execute/worker` are **not exposed to the OpenAI agent**.
+- All agent-driven executions must use `/api/execute`.
 
 ## Workspace Stream
 
 ### WebSocket: `/ws/workspace`
-- Shared stream for both GPT and human users.
+- Shared live event stream for both GPT and human users.
 - Emits ordered events with `seq_id`.
 - Event types:
   - **Command event**:
@@ -59,7 +61,7 @@ The DropCode Sandbox Server provides a controlled environment where OpenAI agent
 
 ## Workspace Logs
 
-### `/workspace/logs`
+### `/api/workspace/logs`
 - Provides access to the rolling buffer of all workspace events (commands + output).
 - Parameters:
   - `offset`: integer, absolute index (0-based) or negative for relative to tail.
@@ -72,18 +74,30 @@ The DropCode Sandbox Server provides a controlled environment where OpenAI agent
   ]
   ```
 
+## File Management
+
+### `/api/write`
+- Create or overwrite a file with provided `filename` and `content`.
+
+### `/api/read`
+- Read the full content of a file.
+
+### `/api/read-partial`
+- Read a chunk of a file starting from an offset with optional limit.
+
 ## Agent Guidance
-- Always use `/execute` for running commands.
-- Expect partial output in the JSON response, but rely on `/ws/workspace` or `/workspace/logs` to access the complete log.
-- Do not use `/execute-async` or `/status`; these are deprecated.
-- To retrieve recent activity, use `/workspace/logs?offset=-20&limit=20`.
+- Always use `/api/execute` for running commands.
+- Expect partial output in the JSON response, but rely on `/ws/workspace` or `/api/workspace/logs` for complete logs.
+- Never attempt to use `/execute-async`, `/status`, or `/worker`.
+- To retrieve recent activity, use `/api/workspace/logs?offset=-20&limit=20`.
 
 ## Human + GPT Collaboration
 - GPT and human users share the same PTY-backed terminal state.
 - Human users see live output in the Terminal UI (via WebSocket).
 - GPT can:
-  - Use `/execute` for commands.
+  - Use `/api/execute` for commands.
   - Follow `/ws/workspace` for real-time feedback.
-  - Query `/workspace/logs` to review recent context.
+  - Query `/api/workspace/logs` to review recent context.
+  - Read/write files with `/api/read`, `/api/read-partial`, and `/api/write`.
 
-This unified model eliminates the need for separate sync/async modes and ensures GPT has the same visibility into the sandbox as a human user.
+This unified model ensures GPT and humans have the same visibility into the sandbox while avoiding long-blocking requests for the agent.

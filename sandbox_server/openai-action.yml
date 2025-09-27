@@ -12,11 +12,16 @@ paths:
   /api/execute:
     post:
       operationId: executeCommand
-      summary: Execute a bash command.
+      summary: Execute a bash command (non-blocking wrapper).
       description: |
-        Accepts a bash command as input and executes it in the sandbox environment.
-        Execution runs inside a PTY for true terminal-like behavior. Output is streamed as events via the WebSocket at `/ws/workspace`.
-        The synchronous JSON response includes the job_id, return code, and the first 50KB of stdout/stderr.
+        Starts execution of a bash command in the sandbox environment.
+        Runs inside a PTY for terminal-like behavior.
+
+        This endpoint does not wait for full completion. Instead, it returns quickly
+        (after a few seconds) with initial output and a `job_id`.
+
+        Full output continues streaming via WebSocket at `/ws/workspace`,
+        or can be retrieved incrementally using `/api/workspace/logs`.
       security:
         - apiKeyAuth: []
       requestBody:
@@ -34,7 +39,7 @@ paths:
                 - command
       responses:
         '200':
-          description: Successfully executed the command.
+          description: Started execution.
           content:
             application/json:
               schema:
@@ -46,10 +51,75 @@ paths:
                     type: string
                   returncode:
                     type: integer
+                    nullable: true
+                    description: May be null if process still running.
                   stdout:
                     type: string
-                  stderr:
+                    description: Initial captured output (partial).
+  /api/write:
+    post:
+      operationId: writeFile
+      summary: Write content to a file using JSON input.
+      description: Creates or overwrites a file in the sandbox directory with the specified filename and content provided in the request body.
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filename:
+                  type: string
+                  description: The name of the file to write.
+                content:
+                  type: string
+                  description: The content to write to the file.
+              required:
+                - filename
+                - content
+      responses:
+        '200':
+          description: Successfully wrote to the file.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
                     type: string
+                    description: Status of the write operation (e.g., "success").
+        '400':
+          description: Bad Request – Missing filename or content in the request body.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: The error message.
+        '401':
+          description: Unauthorized – Missing or invalid API key.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error message.
+        '500':
+          description: Internal Server Error – An error occurred while writing to the file.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: The error message.
   /api/workspace/logs:
     get:
       operationId: getWorkspaceLogs

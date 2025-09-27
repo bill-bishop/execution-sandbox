@@ -20,27 +20,27 @@ body {
 
 .terminal {
     width: 98%;
-    height: 99vh; /* Fixed height as a percentage of the viewport */
+    height: 99vh;
     background-color: #111;
     border: 2px solid #0f0;
     padding: 10px;
     box-sizing: border-box;
     display: flex;
-    flex-direction: column; /* Stack elements in normal order */
-    overflow-y: auto; /* Allow scrolling */
+    flex-direction: column;
+    overflow-y: auto;
     position: relative;
 }
 
 .output {
     flex: 1;
     display: flex;
-    flex-direction: column; /* Normal stacking for content */
+    flex-direction: column;
     white-space: pre-wrap;
     word-wrap: break-word;
     padding: 5px;
     overflow-y: auto;
-    font-size: 1.2em; /* Large blocky text */
-    justify-content: flex-end; /* Align content to the bottom */
+    font-size: 1.2em;
+    justify-content: flex-end;
 }
 
 .input-area {
@@ -58,7 +58,7 @@ body {
 .prompt {
     color: #0f0;
     font-weight: bold;
-    font-size: 1.2em; /* Match the text size */
+    font-size: 1.2em;
 }
 
 input {
@@ -66,7 +66,7 @@ input {
     background-color: #000;
     border: none;
     color: #0f0;
-    font-size: 1.2em; /* Large input text */
+    font-size: 1.2em;
     font-family: inherit;
     caret-color: #0f0;
     outline: none;
@@ -78,16 +78,13 @@ input {
         caret-color: transparent;
     }
 }
-
-
-
     </style>
+
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="terminal">
-        <div id="output" class="output" target="input">
-            <!-- Terminal output will appear here -->
-        </div>
+        <div id="output" class="output"></div>
         <div class="input-area">
             <span class="prompt">&gt;</span>
             <input id="input" type="text" autofocus autocomplete="off">
@@ -98,51 +95,58 @@ input {
         const input = document.getElementById('input');
         const output = document.getElementById('output');
 
-        output.addEventListener('click', function () {
-            input.focus();
+        function appendLine(text, cssClass = "") {
+            const el = document.createElement('div');
+            if (cssClass) el.classList.add(cssClass);
+            el.textContent = text;
+            output.appendChild(el);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Connect via Socket.IO client
+        const socket = io('/ws/workspace', {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
         });
+
+        socket.on('connect', () => {
+            appendLine('*** Connected to workspace ***', 'status');
+        });
+
+        socket.on('disconnect', () => {
+            appendLine('*** Disconnected from workspace ***', 'status');
+        });
+
+        socket.on('event', (data) => {
+            if (data.type === 'command') {
+                appendLine(`$ ${data.command}`, 'command');
+            } else if (data.type === 'output') {
+                appendLine(data.line, 'output');
+            }
+        });
+
+        socket.on('connect_error', (err) => {
+            appendLine('*** Socket.IO connection error ***', 'error');
+            console.error(err);
+        });
+
+        output.addEventListener('click', () => input.focus());
 
         input.addEventListener('keydown', async function (e) {
             if (e.key === 'Enter') {
                 const command = input.value.trim();
-
                 if (command) {
-                    // Append the command to the output
-                    const commandElement = document.createElement('div');
-                    commandElement.textContent = `> ${command}`;
-                    output.appendChild(commandElement);
-
-                    // Post the command to the /api/execute API
                     try {
-                        const response = await fetch('/api/execute', {
+                        await fetch('/api/execute', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ command })
                         });
-
-                        const result = await response.json();
-
-                        // Append the result to the output
-                        const responseElement = document.createElement('div');
-                        if (result.stderr) {
-                            responseElement.innerHTML = `<div class="error">${result.stderr.replace(/\n/g, '<br>')}</div>`;
-                        } else {
-                            responseElement.innerHTML = `${result.stdout.replace(/\n/g, '<br>')}`;
-                        }
-                        output.appendChild(responseElement);
+                        // WebSocket/Socket.IO will show command + output.
                     } catch (error) {
-                        const errorElement = document.createElement('div');
-                        errorElement.textContent = `Error: Unable to reach the server.`;
-                        output.appendChild(errorElement);
+                        appendLine('Error: Unable to reach the server.', 'error');
                     }
-
-                    // Scroll to the bottom
-                    output.scrollTop = output.scrollHeight;
                 }
-
-                // Clear the input
                 input.value = '';
             }
         });

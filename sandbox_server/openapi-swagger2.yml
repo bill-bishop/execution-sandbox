@@ -165,6 +165,61 @@ paths:
                 type: integer
               eof:
                 type: boolean
+  /write:
+    post:
+      summary: Write content to a file using JSON input.
+      description: Creates or overwrites a file in the sandbox directory with the specified filename and content provided in the request body.
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required:
+              - filename
+              - content
+            properties:
+              filename:
+                type: string
+                description: The name of the file to write.
+              content:
+                type: string
+                description: The content to write to the file.
+      responses:
+        '200':
+          description: Successfully wrote to the file.
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                description: Status of the write operation (e.g., "success").
+        '400':
+          description: Bad Request – Missing filename or content in the request body.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: The error message.
+        '401':
+          description: Unauthorized – Missing or invalid API key.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: Error message.
+        '500':
+          description: Internal Server Error – An error occurred while writing to the file.
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                description: The error message.
 securityDefinitions:
   apiKeyAuth:
     type: apiKey
