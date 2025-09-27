@@ -1,6 +1,6 @@
-Flask==2.2.3
-Werkzeug==2.2.2
-Flask-SocketIO==5.3.6
+Werkzeug~=2.0.3
+Flask~=2.1.0
+Flask-SocketIO~=4.3.2
 eventlet==0.33.3
 pytest==7.4.4
 requests==2.31.0

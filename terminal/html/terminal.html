@@ -32,8 +32,8 @@ body {
 }
 
 .output {
-    flex: 1;
-    display: flex;
+    /*flex: 1;*/
+    /*display: flex;*/
     flex-direction: column;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -80,7 +80,7 @@ input {
 }
     </style>
 
-    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.min.js" integrity="sha256-3mSG7UwOBvFjHfbRa4u6KJEreur0Wo24MYoixIpvcqo=" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="terminal">
@@ -118,6 +118,7 @@ input {
         });
 
         socket.on('event', (data) => {
+            console.log('event received', data);
             if (data.type === 'command') {
                 appendLine(`$ ${data.command}`, 'command');
             } else if (data.type === 'output') {

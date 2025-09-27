@@ -1,10 +1,9 @@
 import time
-import threading
 import queue
 import uuid
 from flask import Blueprint, request, jsonify
-from .. import workspace_log
 from .execute_worker import run_command, SANDBOX_DIR
+from ..socket import socketio
 
 bp = Blueprint("execute_wrapper", __name__, url_prefix="/execute")
 
@@ -19,6 +18,14 @@ def execute_wrapper():
     pwd = data.get("pwd", SANDBOX_DIR)
     job_id = str(uuid.uuid4())
 
+    # Debug emit — should always be visible
+    socketio.emit(
+        "event",
+        {"type": "command", "job_id": job_id, "command": command},
+        namespace="/ws/workspace",
+        broadcast=True,
+    )
+
     q = queue.Queue()
     result = {"returncode": None}
 
@@ -30,17 +37,8 @@ def execute_wrapper():
         result["returncode"] = rc
         q.put(None)  # signal completion
 
-    # Log command event right away
-    command_event = workspace_log.append_event({
-        "type": "command",
-        "job_id": job_id,
-        "command": command,
-        "source": "api",
-    })
-
-    # Run worker in background thread
-    thread = threading.Thread(target=runner, daemon=True)
-    thread.start()
+    # Run worker in background task (Socket.IO-aware)
+    socketio.start_background_task(runner)
 
     # Collect lines for up to 3 seconds or until completion
     lines = []
