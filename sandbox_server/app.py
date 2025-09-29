@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flasgger import Swagger
+from flask_jwt_extended import JWTManager
 
-from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws
+from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws, auth
 from .config import API_KEY
 from .socket import socketio
+from .models import db
 
 app = Flask(__name__)
 
@@ -14,25 +16,21 @@ CORS(app, supports_credentials=True)
 # Swagger setup
 swagger = Swagger(app, template_file="openapi-swagger2.yml")
 
+# DB + JWT setup
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sandbox.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = "super-secret"
+
+db.init_app(app)
+jwt = JWTManager(app)
 
 # SocketIO instance, initialized in app.py
 socketio.init_app(app)
 
 print(f"socketio id: {id(socketio)}", flush=True)
 
-
 # Initialize WebSocket namespace
 ws.init_socketio(socketio)
-
-# Middleware for API key authentication
-# @app.before_request
-# def authenticate():
-#     if request.path.startswith("/static") or request.path.startswith("/ws") or request.path.startswith("/apidocs"):
-#         return  # Skip static files, websocket, and swagger docs
-#
-#     key = request.headers.get("API-Key")
-#     if key != API_KEY:
-#         return jsonify({"error": "Unauthorized"}), 401
 
 # Register Blueprints
 app.register_blueprint(execute.bp)
@@ -41,8 +39,9 @@ app.register_blueprint(read_file.bp)
 app.register_blueprint(write_file.bp)
 app.register_blueprint(read_partial.bp)
 app.register_blueprint(workspace.bp)
-
-
+app.register_blueprint(auth.bp)
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     socketio.run(app, host="0.0.0.0", port=8080)

@@ -1,7 +1,9 @@
 import os
 import pty
 import subprocess
+import time
 import uuid
+import select
 from flask import Blueprint, request, jsonify
 
 from sandbox_server import workspace_log
@@ -19,6 +21,9 @@ def run_command(job_id, command, pwd, on_output=None):
     if not os.path.exists(pwd):
         return 1, "Working directory does not exist"
 
+    # Read timeout dynamically (so tests can override via env)
+    COMMAND_TIMEOUT = int(os.environ.get("COMMAND_TIMEOUT", 60))
+
     master_fd, slave_fd = pty.openpty()
     process = subprocess.Popen(
         command,
@@ -33,40 +38,70 @@ def run_command(job_id, command, pwd, on_output=None):
     os.close(slave_fd)
 
     stdout_buf = ""
+    start_time = time.time()
+    killed = False
+
     while True:
-        try:
-            data_bytes = os.read(master_fd, 1024)
-        except OSError:
-            break
-
-        if not data_bytes:
-            break
-
-        chunk = data_bytes.decode(errors="ignore")
-        for line in chunk.splitlines():
+        # Timeout check
+        if time.time() - start_time > COMMAND_TIMEOUT:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+            killed = True
             event = {
                 "type": "output",
                 "job_id": job_id,
                 "command": command,
                 "source": "api",
-                "stream": "stdout",
-                "line": line,
+                "stream": "stderr",
+                "line": "Process timed out and was killed",
             }
-
-            print(f"Workspace event: {event}", flush=True)
-            event = workspace_log.append_event(event)
+            workspace_log.append_event(event)
             socketio.emit("event", event, namespace="/ws/workspace", broadcast=True)
-            print(f"socketio id: {id(socketio)}", flush=True)
+            break
 
-            if on_output:
-                on_output(line)
+        # Wait for data with shorter timeout to enforce fast checks
+        rlist, _, _ = select.select([master_fd], [], [], 0.1)
+        if rlist:
+            try:
+                data_bytes = os.read(master_fd, 1024)
+            except OSError:
+                break
 
-        if len(stdout_buf) < BUFFER_LIMIT:
-            stdout_buf += chunk
+            if not data_bytes:
+                break
+
+            chunk = data_bytes.decode(errors="ignore")
+            for line in chunk.splitlines():
+                event = {
+                    "type": "output",
+                    "job_id": job_id,
+                    "command": command,
+                    "source": "api",
+                    "stream": "stdout",
+                    "line": line,
+                }
+
+                event = workspace_log.append_event(event)
+                socketio.emit("event", event, namespace="/ws/workspace", broadcast=True)
+
+                if on_output:
+                    on_output(line)
+
+            if len(stdout_buf) < BUFFER_LIMIT:
+                stdout_buf += chunk
+        else:
+            # No output, check if process ended
+            if process.poll() is not None:
+                break
 
     process.wait()
     os.close(master_fd)
 
+    if killed:
+        return -1, stdout_buf
     return process.returncode, stdout_buf
 
 

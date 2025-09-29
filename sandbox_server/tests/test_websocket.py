@@ -50,7 +50,7 @@ def test_websocket_preserves_ansi_sequences(flask_client, socket_client):
     time.sleep(0.5)
     received = socket_client.get_received("/ws/workspace")
     lines = [m["args"][0].get("line", "") for m in received if m["name"] == "event"]
-    ansi_pattern = re.compile(r"\\033\\[\d+?m")
+    ansi_pattern = re.compile(r"\x1b\[[0-9;]*m")
 
     # At least one line should contain a full ANSI sequence
     assert any(ansi_pattern.search(line) for line in lines), f"ANSI not preserved in lines: {lines}"
