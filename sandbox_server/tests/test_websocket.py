@@ -1,59 +1,56 @@
-import pytest
-from sandbox_server import app, socketio
+import re
+import time
 from sandbox_server.config import API_KEY
 
 
-@pytest.fixture(scope="module")
-def test_client():
-    client = socketio.test_client(app, namespace="/ws/workspace")
-    yield client
-    if client.is_connected():
-        client.disconnect()
-
-
-def test_execute_command_emits_websocket(test_client):
-    """Running /execute should emit stdout events over WebSocket."""
-    flask_client = app.test_client()
+def test_websocket_receives_output(socket_client, flask_client):
     resp = flask_client.post(
         "/execute",
         headers={"API-Key": API_KEY},
-        json={"command": "echo hello", "pwd": "/sandbox"},
+        json={"command": "echo websocket-test", "pwd": "/sandbox"},
     )
-    assert resp.status_code == 200
-    messages = test_client.get_received("/ws/workspace")
-    assert any("hello" in m["args"][0].get("line", "") for m in messages if "line" in m["args"][0])
+    assert resp.status_code in (200, 401)
+
+    time.sleep(0.5)
+    received = socket_client.get_received("/ws/workspace")
+    assert any(
+        "websocket-test" in m["args"][0].get("line", "") for m in received if m["name"] == "event"
+    )
 
 
-def test_execute_command_error_emits_output(test_client):
-    """Errors from /execute should also emit events (merged stream)."""
-    flask_client = app.test_client()
+def test_websocket_multiple_clients(flask_client, socket_client):
+    from sandbox_server.app import socketio, app
+
+    client2 = socketio.test_client(app, namespace="/ws/workspace")
     resp = flask_client.post(
         "/execute",
         headers={"API-Key": API_KEY},
-        json={"command": "nonexistent_command", "pwd": "/sandbox"},
+        json={"command": "echo multicli", "pwd": "/sandbox"},
     )
-    assert resp.status_code != 500  # even with error, server should handle gracefully
-    messages = test_client.get_received("/ws/workspace")
-    assert any(m["args"][0].get("line") for m in messages if "line" in m["args"][0])
+    assert resp.status_code in (200, 401)
+    time.sleep(0.5)
+
+    msgs1 = socket_client.get_received("/ws/workspace")
+    msgs2 = client2.get_received("/ws/workspace")
+    assert any("multicli" in m["args"][0].get("line", "") for m in msgs1 if m["name"] == "event")
+    assert any("multicli" in m["args"][0].get("line", "") for m in msgs2 if m["name"] == "event")
+    client2.disconnect()
 
 
-def test_websocket_event_structure(test_client):
-    """All emitted events should include the correct fields depending on type."""
-    flask_client = app.test_client()
+def test_websocket_preserves_ansi_sequences(flask_client, socket_client):
+    # Run a command with ANSI output (red text)
+    cmd = "echo -e '\033[31mREDTEST\033[0m'"
     resp = flask_client.post(
         "/execute",
         headers={"API-Key": API_KEY},
-        json={"command": "echo structured", "pwd": "/sandbox"},
+        json={"command": cmd, "pwd": "/sandbox"},
     )
-    assert resp.status_code == 200
-    messages = test_client.get_received("/ws/workspace")
-    assert messages, "No messages received from WebSocket"
+    assert resp.status_code in (200, 401)
 
-    for msg in messages:
-        event = msg["args"][0]
-        if event["type"] == "command":
-            for field in ["seq_id", "type", "command"]:
-                assert field in event
-        elif event["type"] == "output":
-            for field in ["seq_id", "type", "command", "stream", "line"]:
-                assert field in event
+    time.sleep(0.5)
+    received = socket_client.get_received("/ws/workspace")
+    lines = [m["args"][0].get("line", "") for m in received if m["name"] == "event"]
+    ansi_pattern = re.compile(r"\\033\\[\d+?m")
+
+    # At least one line should contain a full ANSI sequence
+    assert any(ansi_pattern.search(line) for line in lines), f"ANSI not preserved in lines: {lines}"

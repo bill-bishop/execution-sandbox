@@ -32,8 +32,6 @@ body {
 }
 
 .output {
-    /*flex: 1;*/
-    /*display: flex;*/
     flex-direction: column;
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -130,6 +128,25 @@ input {
             appendLine('*** Socket.IO connection error ***', 'error');
             console.error(err);
         });
+
+        // Load last 20 lines of logs on page load
+        async function loadRecentLogs() {
+            try {
+                const res = await fetch('/api/workspace/logs?offset=-20&limit=20');
+                const logs = await res.json();
+                logs.forEach(entry => {
+                    if (entry.type === 'command') {
+                        appendLine(`$ ${entry.command}`, 'command');
+                    } else if (entry.type === 'output') {
+                        appendLine(entry.line, 'output');
+                    }
+                });
+            } catch (err) {
+                console.error('Failed to load recent logs', err);
+            }
+        }
+
+        loadRecentLogs();
 
         output.addEventListener('click', () => input.focus());
 

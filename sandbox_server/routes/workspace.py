@@ -14,5 +14,14 @@ def get_logs():
     except ValueError:
         limit = 100
 
-    logs = workspace_log.get_logs(offset=offset, limit=limit)
+    message_type = request.args.get("type", "all").lower()
+
+    logs = workspace_log.get_logs(offset=offset, limit=limit * 5)  # fetch more to allow filtering
+
+    if message_type != "all":
+        logs = [e for e in logs if e.get("type") == message_type]
+
+    # Apply final limit after filtering
+    logs = logs[-limit:]
+
     return jsonify(logs)

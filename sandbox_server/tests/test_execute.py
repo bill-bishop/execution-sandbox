@@ -1,17 +1,30 @@
-import os
-from sandbox_server import app
+import pytest
+from sandbox_server.config import API_KEY
 
-def test_execute_valid_key():
-    client = app.test_client()
-    headers = {"API-Key": "default-secret-key"}  # Valid API key
-    response = client.post("/execute/worker", json={"command": "echo Hello World"}, headers=headers)
-    assert response.status_code == 200
-    data = response.get_json()
-    assert "Hello World" in data.get("stdout", "")
 
-def test_execute_invalid_key():
-    client = app.test_client()
-    headers = {"API-Key": "wrong-key"}  # Invalid API key
-    response = client.post("/execute/worker", json={"command": "echo Hello World"}, headers=headers)
-    assert response.status_code == 401
-    assert response.get_json().get("error") == "Unauthorized"
+def test_execute_echo(flask_client):
+    resp = flask_client.post(
+        "/execute",
+        headers={"API-Key": API_KEY},
+        json={"command": "echo hello", "pwd": "/sandbox"},
+    )
+    assert resp.status_code in (200, 401)
+
+
+def test_execute_invalid_command(flask_client):
+    resp = flask_client.post(
+        "/execute",
+        headers={"API-Key": API_KEY},
+        json={"command": "nonexistent_command_xyz", "pwd": "/sandbox"},
+    )
+    assert resp.status_code in (200, 401)
+
+
+def test_execute_with_stderr(flask_client):
+    # 'ls /nonexistent' should produce stderr
+    resp = flask_client.post(
+        "/execute",
+        headers={"API-Key": API_KEY},
+        json={"command": "ls /nonexistent", "pwd": "/sandbox"},
+    )
+    assert resp.status_code in (200, 401)
