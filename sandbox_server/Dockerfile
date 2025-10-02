@@ -2,7 +2,7 @@
 FROM python:3.10-alpine
 
 # Install Node.js and npm (if needed for other parts)
-RUN apk add --no-cache nodejs npm
+RUN apk add --no-cache nodejs npm chromium
 
 # Set up the working directory for server code
 WORKDIR /app
@@ -12,6 +12,10 @@ COPY . /app/sandbox_server
 
 # Expose API port
 EXPOSE 8080
+
+# turn off angular analytics
+ENV NG_CLI_ANALYTICS=false
+ENV CHROME_BIN=/usr/bin/chromium
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r sandbox_server/requirements.txt

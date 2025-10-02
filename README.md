@@ -27,7 +27,7 @@ docker build -t terminal terminal
    ```
 2. Start the python sandbox server in this network, and mount any desired folder to /sandbox (below example mounts this project root):
    ```bash
-   docker run --rm -d --network sandbox-net --name sandbox -v %CD%:/sandbox sandbox_server:latest
+   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox sandbox_server:latest
    ```
 3. Start the Nginx router in this network, exposing port 80:
    ```bash
