@@ -13,7 +13,7 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 # Step 1: redirect user to GitHub OAuth
 @bp.route("/auth/redirect/github")
 def github_redirect():
-    redirect_uri = request.url_root.rstrip("/") + "/auth/callback/github"
+    redirect_uri = "https://dropcode.org/api/auth/callback/github"
     url = f"{GITHUB_AUTHORIZE_URL}?client_id={GITHUB_CLIENT_ID}&redirect_uri={redirect_uri}&scope=read:user user:email"
     return redirect(url)
 

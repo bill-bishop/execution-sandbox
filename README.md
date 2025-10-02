@@ -6,16 +6,18 @@ This project creates a sandboxed environment with a Flask server running inside 
 
 #### Build
 
-Run the following command to build the sandbox server API Docker image:
+Run the following command to build the latest sandbox server API Docker image:
 
 ```bash
 docker build -t sandbox_server sandbox_server
+docker build -t sandbox_server:nightly sandbox_server # nightly
 ```
 
 Run the following command to build the Nginx router Docker image:
 
 ```bash
 docker build -t terminal terminal
+docker build -t terminal:nightly terminal # nightly
 ```
 
 
@@ -27,11 +29,13 @@ docker build -t terminal terminal
    ```
 2. Start the python sandbox server in this network, and mount any desired folder to /sandbox (below example mounts this project root):
    ```bash
-   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox sandbox_server:latest
+   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:latest
+   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:nightly # nightly
    ```
 3. Start the Nginx router in this network, exposing port 80:
    ```bash
    docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:latest
+   docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly # nightly
    ```
 
 

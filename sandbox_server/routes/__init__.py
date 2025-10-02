@@ -8,7 +8,6 @@ all_blueprints = [
     read_file.bp,
     read_partial.bp,
     workspace.bp,
-    ws.bp,
     write_file.bp,
     auth_github.bp,
 ]
