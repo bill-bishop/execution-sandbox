@@ -31,7 +31,7 @@ def login():
     return jsonify(access_token=token)
 
 
-@bp.route("/me")
+@bp.route("/auth/me")
 @jwt_required()
 def me():
     uid = get_jwt_identity()

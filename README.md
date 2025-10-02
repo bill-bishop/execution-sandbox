@@ -38,6 +38,19 @@ docker build -t terminal:nightly terminal # nightly
    docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly # nightly
    ```
 
+##### Testing Nightly Version
+
+Build the nightly sandbox_server image, kill the sandbox, wait, start the nightly container:
+
+```bash
+docker build -t sandbox_server:nightly sandbox_server && docker kill sandbox && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:nightly
+```
+
+Same for the nginx router:
+
+```bash
+docker build -t terminal:nightly terminal && docker kill sandbox-router && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly
+```
 
 ##### Cloudflare Tunnel Setup
 

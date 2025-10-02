@@ -21,6 +21,13 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///sandbox.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = "super-secret"
 
+# ✅ Configure JWT to use cookies
+app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
+app.config["JWT_ACCESS_COOKIE_NAME"] = "auth_token"
+app.config["JWT_COOKIE_SECURE"] = True   # only allow over HTTPS
+app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+
+
 db.init_app(app)
 jwt = JWTManager(app)
 
