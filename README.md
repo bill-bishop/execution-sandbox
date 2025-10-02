@@ -46,10 +46,10 @@ Build the nightly sandbox_server image, kill the sandbox, wait, start the nightl
 docker build -t sandbox_server:nightly sandbox_server && docker kill sandbox && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:nightly
 ```
 
-Same for the nginx router:
+Same for the nginx router & UI assets:
 
 ```bash
-docker build -t terminal:nightly terminal && docker kill sandbox-router && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly
+cd ../dropcode-client && npm run build && cd ../execution-sandbox && docker build -t terminal:nightly terminal && docker kill sandbox-router && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly
 ```
 
 ##### Cloudflare Tunnel Setup
