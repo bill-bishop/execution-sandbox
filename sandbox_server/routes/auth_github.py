@@ -60,7 +60,8 @@ def github_callback():
     # Create JWT using flask_jwt_extended
     app_token = create_access_token(identity=str(user.id))
 
-    response = make_response(redirect("https://dropcode.org/#/auth/callback"))
+    # todo: use passthrough target
+    response = make_response(redirect("https://dropcode.org/"))
     response.set_cookie(
         "auth_token",
         app_token,
