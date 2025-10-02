@@ -29,12 +29,35 @@ body {
     overflow: hidden;
 }
 
-.fallback-output {
+#xterm {
+    flex: 1;
+    overflow: hidden;
+}
+
+.input-area {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #111;
+    border-top: 1px solid #0f0;
+    padding: 8px;
+}
+
+.prompt {
     color: #0f0;
-    font-family: monospace;
-    padding: 10px;
-    overflow-y: auto;
-    white-space: pre-wrap;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+input {
+    flex: 1;
+    background-color: #000;
+    border: none;
+    color: #0f0;
+    font-size: 1.1em;
+    font-family: inherit;
+    caret-color: #0f0;
+    outline: none;
 }
     </style>
 
@@ -45,118 +68,92 @@ body {
 <body>
     <div class="terminal-container">
         <div id="xterm"></div>
-        <div id="fallback" class="fallback-output" style="display:none"></div>
+        <div class="input-area">
+            <span class="prompt">&gt;</span>
+            <input id="input" type="text" autofocus autocomplete="off">
+        </div>
     </div>
 
     <script>
-        function stripAnsi(str) {
-            return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
-        }
-
-        function initXterm() {
-            const term = new Terminal({
-                cursorBlink: true,
-                fontFamily: 'Courier New, monospace',
-                theme: {
-                    background: '#000000',
-                    foreground: '#00ff00'
-                }
-            });
-            const fitAddon = new FitAddon.FitAddon();
-            term.loadAddon(fitAddon);
-            term.open(document.getElementById('xterm'));
-            fitAddon.fit();
-
-            window.addEventListener('resize', () => fitAddon.fit());
-
-            const socket = io('/ws/workspace', {
-                path: '/socket.io',
-                transports: ['websocket', 'polling']
-            });
-
-            socket.on('connect', () => {
-                term.writeln('\u001b[32m*** Connected to workspace ***\u001b[0m');
-            });
-
-            socket.on('disconnect', () => {
-                term.writeln('\u001b[31m*** Disconnected from workspace ***\u001b[0m');
-            });
-
-            socket.on('event', (data) => {
-                if (data.type === 'command') {
-                    term.writeln(`\u001b[1;33m$ ${data.command}\u001b[0m`);
-                } else if (data.type === 'output') {
-                    term.writeln(data.line);
-                }
-            });
-
-            socket.on('connect_error', (err) => {
-                term.writeln('\u001b[31m*** Socket.IO connection error ***\u001b[0m');
-                console.error(err);
-            });
-
-            async function loadRecentLogs() {
-                try {
-                    const res = await fetch('/api/workspace/logs?offset=-100&limit=100');
-                    const logs = await res.json();
-                    logs.forEach(entry => {
-                        if (entry.type === 'command') {
-                            term.writeln(`\u001b[1;33m$ ${entry.command}\u001b[0m`);
-                        } else if (entry.type === 'output') {
-                            term.writeln(entry.line);
-                        }
-                    });
-                } catch (err) {
-                    console.error('Failed to load recent logs', err);
-                }
+        // Initialize Xterm for output
+        const term = new Terminal({
+            cursorBlink: true,
+            fontFamily: 'Courier New, monospace',
+            theme: {
+                background: '#000000',
+                foreground: '#00ff00'
             }
-            loadRecentLogs();
-        }
+        });
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        term.open(document.getElementById('xterm'));
+        fitAddon.fit();
+        window.addEventListener('resize', () => fitAddon.fit());
 
-        try {
-            if (window.Terminal && window.FitAddon) {
-                initXterm();
-            } else {
-                throw new Error('xterm.js not available');
+        // Connect to backend logs/events
+        const socket = io('/ws/workspace', {
+            path: '/socket.io',
+            transports: ['websocket', 'polling']
+        });
+
+        socket.on('connect', () => {
+            term.writeln('\u001b[32m*** Connected to workspace ***\u001b[0m');
+        });
+
+        socket.on('disconnect', () => {
+            term.writeln('\u001b[31m*** Disconnected from workspace ***\u001b[0m');
+        });
+
+        socket.on('event', (data) => {
+            if (data.type === 'command') {
+                term.writeln(`\u001b[1;33m$ ${data.command}\u001b[0m`);
+            } else if (data.type === 'output') {
+                term.writeln(data.line);
             }
-        } catch (e) {
-            console.warn('Falling back to plain text terminal:', e);
-            document.getElementById('xterm').style.display = 'none';
-            const fallback = document.getElementById('fallback');
-            fallback.style.display = 'block';
+        });
 
-            function appendFallback(text) {
-                fallback.textContent += stripAnsi(text) + "\n";
-                fallback.scrollTop = fallback.scrollHeight;
-            }
+        socket.on('connect_error', (err) => {
+            term.writeln('\u001b[31m*** Socket.IO connection error ***\u001b[0m');
+            console.error(err);
+        });
 
-            const socket = io('/ws/workspace', {
-                path: '/socket.io',
-                transports: ['websocket', 'polling']
-            });
-
-            socket.on('connect', () => appendFallback('*** Connected to workspace ***'));
-            socket.on('disconnect', () => appendFallback('*** Disconnected from workspace ***'));
-            socket.on('event', (data) => {
-                if (data.type === 'command') {
-                    appendFallback(`$ ${data.command}`);
-                } else if (data.type === 'output') {
-                    appendFallback(data.line);
-                }
-            });
-            socket.on('connect_error', () => appendFallback('*** Socket.IO connection error ***'));
-
-            fetch('/api/workspace/logs?offset=-100&limit=100')
-                .then(res => res.json())
-                .then(logs => logs.forEach(entry => {
+        // Load last 100 lines of logs on page load
+        async function loadRecentLogs() {
+            try {
+                const res = await fetch('/api/workspace/logs?offset=-100&limit=100');
+                const logs = await res.json();
+                logs.forEach(entry => {
                     if (entry.type === 'command') {
-                        appendFallback(`$ ${entry.command}`);
+                        term.writeln(`\u001b[1;33m$ ${entry.command}\u001b[0m`);
                     } else if (entry.type === 'output') {
-                        appendFallback(entry.line);
+                        term.writeln(entry.line);
                     }
-                }))
-                .catch(err => console.error('Failed to load recent logs', err));
+                });
+            } catch (err) {
+                console.error('Failed to load recent logs', err);
+            }
         }
+        loadRecentLogs();
+
+        // Input box handling (simple commands)
+        const input = document.getElementById('input');
+        input.addEventListener('keydown', async function (e) {
+            if (e.key === 'Enter') {
+                const command = input.value.trim();
+                if (command) {
+                    try {
+                        await fetch('/api/execute', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ command })
+                        });
+                    } catch (error) {
+                        term.writeln('\u001b[31mError: Unable to reach the server.\u001b[0m');
+                    }
+                }
+                input.value = '';
+            }
+        });
     </script>
 </body>
 </html>
