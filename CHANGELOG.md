@@ -3,6 +3,18 @@
 ## [Unreleased]
 - TBD
 
+## [0.3.0] - 2025-10-02
+### Added
+- GitHub OAuth login flow with `/auth/redirect/github` and `/auth/callback/github` routes.
+- JWT cookie-based authentication (`auth_token`) with secure, HttpOnly cookies.
+- Support for `JWT_TOKEN_LOCATION = ["cookies"]` in server config.
+- `/auth/logout` route clears cookie.
+- Nginx routing updated with `try_files $uri /index.html;` to support Angular 20 HTML5 routing.
+
+### Fixed
+- Circular dependency issues in `AuthService`.
+- Corrected redirect handling for GitHub OAuth flow.
+
 ## [0.2.0] - 2025-09-27
 ### Added
 - Timeout enforcement for worker commands (default 60s, configurable via `COMMAND_TIMEOUT`).

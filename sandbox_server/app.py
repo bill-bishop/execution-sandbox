@@ -45,7 +45,7 @@ app.register_blueprint(execute_worker.bp)
 app.register_blueprint(read_file.bp)
 app.register_blueprint(write_file.bp)
 app.register_blueprint(read_partial.bp)
-# app.register_blueprint(workspace.bp)
+app.register_blueprint(workspace.bp)
 app.register_blueprint(auth.bp)
 app.register_blueprint(auth_github.bp)
 

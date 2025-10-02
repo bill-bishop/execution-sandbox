@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Old-School Terminal UI</title>
+    <title>Xterm.js Terminal UI</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     <style>
 body {
     margin: 0;
@@ -18,156 +19,144 @@ body {
     height: 100vh;
 }
 
-.terminal {
+.terminal-container {
     width: 98%;
     height: 99vh;
-    background-color: #111;
     border: 2px solid #0f0;
-    padding: 10px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    overflow-y: auto;
-    position: relative;
+    overflow: hidden;
 }
 
-.output {
-    flex-direction: column;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    padding: 5px;
-    overflow-y: auto;
-    font-size: 1.2em;
-    justify-content: flex-end;
-}
-
-.input-area {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: #111;
-    position: sticky;
-    bottom: 0;
-    left: 0;
-    right: 0;
+.fallback-output {
+    color: #0f0;
+    font-family: monospace;
     padding: 10px;
-}
-
-.prompt {
-    color: #0f0;
-    font-weight: bold;
-    font-size: 1.2em;
-}
-
-input {
-    flex: 1;
-    background-color: #000;
-    border: none;
-    color: #0f0;
-    font-size: 1.2em;
-    font-family: inherit;
-    caret-color: #0f0;
-    outline: none;
-    animation: blink 1s step-start infinite;
-}
-
-@keyframes blink {
-    50% {
-        caret-color: transparent;
-    }
+    overflow-y: auto;
+    white-space: pre-wrap;
 }
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.min.js" integrity="sha256-3mSG7UwOBvFjHfbRa4u6KJEreur0Wo24MYoixIpvcqo=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
 </head>
 <body>
-    <div class="terminal">
-        <div id="output" class="output"></div>
-        <div class="input-area">
-            <span class="prompt">&gt;</span>
-            <input id="input" type="text" autofocus autocomplete="off">
-        </div>
+    <div class="terminal-container">
+        <div id="xterm"></div>
+        <div id="fallback" class="fallback-output" style="display:none"></div>
     </div>
 
     <script>
-        const input = document.getElementById('input');
-        const output = document.getElementById('output');
-
-        function appendLine(text, cssClass = "") {
-            const el = document.createElement('div');
-            if (cssClass) el.classList.add(cssClass);
-            el.textContent = text;
-            output.appendChild(el);
-            output.scrollTop = output.scrollHeight;
+        function stripAnsi(str) {
+            return str.replace(/\x1B\[[0-9;]*[A-Za-z]/g, '');
         }
 
-        // Connect via Socket.IO client
-        const socket = io('/ws/workspace', {
-            path: '/socket.io',
-            transports: ['websocket', 'polling']
-        });
-
-        socket.on('connect', () => {
-            appendLine('*** Connected to workspace ***', 'status');
-        });
-
-        socket.on('disconnect', () => {
-            appendLine('*** Disconnected from workspace ***', 'status');
-        });
-
-        socket.on('event', (data) => {
-            console.log('event received', data);
-            if (data.type === 'command') {
-                appendLine(`$ ${data.command}`, 'command');
-            } else if (data.type === 'output') {
-                appendLine(data.line, 'output');
-            }
-        });
-
-        socket.on('connect_error', (err) => {
-            appendLine('*** Socket.IO connection error ***', 'error');
-            console.error(err);
-        });
-
-        // Load last 20 lines of logs on page load
-        async function loadRecentLogs() {
-            try {
-                const res = await fetch('/api/workspace/logs?offset=-20&limit=20');
-                const logs = await res.json();
-                logs.forEach(entry => {
-                    if (entry.type === 'command') {
-                        appendLine(`$ ${entry.command}`, 'command');
-                    } else if (entry.type === 'output') {
-                        appendLine(entry.line, 'output');
-                    }
-                });
-            } catch (err) {
-                console.error('Failed to load recent logs', err);
-            }
-        }
-
-        loadRecentLogs();
-
-        output.addEventListener('click', () => input.focus());
-
-        input.addEventListener('keydown', async function (e) {
-            if (e.key === 'Enter') {
-                const command = input.value.trim();
-                if (command) {
-                    try {
-                        await fetch('/api/execute', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ command })
-                        });
-                        // WebSocket/Socket.IO will show command + output.
-                    } catch (error) {
-                        appendLine('Error: Unable to reach the server.', 'error');
-                    }
+        function initXterm() {
+            const term = new Terminal({
+                cursorBlink: true,
+                fontFamily: 'Courier New, monospace',
+                theme: {
+                    background: '#000000',
+                    foreground: '#00ff00'
                 }
-                input.value = '';
+            });
+            const fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            term.open(document.getElementById('xterm'));
+            fitAddon.fit();
+
+            window.addEventListener('resize', () => fitAddon.fit());
+
+            const socket = io('/ws/workspace', {
+                path: '/socket.io',
+                transports: ['websocket', 'polling']
+            });
+
+            socket.on('connect', () => {
+                term.writeln('\u001b[32m*** Connected to workspace ***\u001b[0m');
+            });
+
+            socket.on('disconnect', () => {
+                term.writeln('\u001b[31m*** Disconnected from workspace ***\u001b[0m');
+            });
+
+            socket.on('event', (data) => {
+                if (data.type === 'command') {
+                    term.writeln(`\u001b[1;33m$ ${data.command}\u001b[0m`);
+                } else if (data.type === 'output') {
+                    term.writeln(data.line);
+                }
+            });
+
+            socket.on('connect_error', (err) => {
+                term.writeln('\u001b[31m*** Socket.IO connection error ***\u001b[0m');
+                console.error(err);
+            });
+
+            async function loadRecentLogs() {
+                try {
+                    const res = await fetch('/api/workspace/logs?offset=-100&limit=100');
+                    const logs = await res.json();
+                    logs.forEach(entry => {
+                        if (entry.type === 'command') {
+                            term.writeln(`\u001b[1;33m$ ${entry.command}\u001b[0m`);
+                        } else if (entry.type === 'output') {
+                            term.writeln(entry.line);
+                        }
+                    });
+                } catch (err) {
+                    console.error('Failed to load recent logs', err);
+                }
             }
-        });
+            loadRecentLogs();
+        }
+
+        try {
+            if (window.Terminal && window.FitAddon) {
+                initXterm();
+            } else {
+                throw new Error('xterm.js not available');
+            }
+        } catch (e) {
+            console.warn('Falling back to plain text terminal:', e);
+            document.getElementById('xterm').style.display = 'none';
+            const fallback = document.getElementById('fallback');
+            fallback.style.display = 'block';
+
+            function appendFallback(text) {
+                fallback.textContent += stripAnsi(text) + "\n";
+                fallback.scrollTop = fallback.scrollHeight;
+            }
+
+            const socket = io('/ws/workspace', {
+                path: '/socket.io',
+                transports: ['websocket', 'polling']
+            });
+
+            socket.on('connect', () => appendFallback('*** Connected to workspace ***'));
+            socket.on('disconnect', () => appendFallback('*** Disconnected from workspace ***'));
+            socket.on('event', (data) => {
+                if (data.type === 'command') {
+                    appendFallback(`$ ${data.command}`);
+                } else if (data.type === 'output') {
+                    appendFallback(data.line);
+                }
+            });
+            socket.on('connect_error', () => appendFallback('*** Socket.IO connection error ***'));
+
+            fetch('/api/workspace/logs?offset=-100&limit=100')
+                .then(res => res.json())
+                .then(logs => logs.forEach(entry => {
+                    if (entry.type === 'command') {
+                        appendFallback(`$ ${entry.command}`);
+                    } else if (entry.type === 'output') {
+                        appendFallback(entry.line);
+                    }
+                }))
+                .catch(err => console.error('Failed to load recent logs', err));
+        }
     </script>
 </body>
 </html>
