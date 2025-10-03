@@ -1,4 +1,4 @@
-# DropCode Sandbox Server – Changelog
+# HermesAI Sandbox Server – Changelog
 
 ## v3.1.0 - 2025-10-02
 
@@ -34,4 +34,4 @@
 - All tests green (13/13).
 
 ---
-This release marks DropCode Sandbox Server **v3.0.0** with a simplified, unified execution model that matches both GPT and human terminal use cases.
+This release marks HermesAI Sandbox Server **v3.0.0** with a simplified, unified execution model that matches both GPT and human terminal use cases.

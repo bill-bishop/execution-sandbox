@@ -9,7 +9,7 @@ def test_nginx_conf_contains_user_routing():
         conf = f.read()
 
     # Ensure regex-based server_name is present
-    assert re.search(r"server_name ~\^\(\?<user>\.\+\)\\.dropcode\\.org\$;", conf)
+    assert re.search(r"server_name ~\^\(\?<user>\.\+\)\\.hermesai\\.dev\$;", conf)
 
     # Ensure proxy_pass points to workspace containers
     assert "proxy_pass http://workspace_$user:8080/;" in conf

@@ -24,7 +24,7 @@ def _validate_target(target: str) -> str:
 @bp.route("/auth/redirect/github")
 def github_redirect():
     target = request.args.get("target", "/dashboard")
-    redirect_uri = "https://dropcode.org/api/auth/callback/github"
+    redirect_uri = "https://hermesai.dev/api/auth/callback/github"
     url = (
         f"{GITHUB_AUTHORIZE_URL}?client_id={GITHUB_CLIENT_ID}"
         f"&redirect_uri={redirect_uri}"
@@ -77,7 +77,7 @@ def github_callback():
     # Create JWT using flask_jwt_extended
     app_token = create_access_token(identity=str(user.id))
 
-    response = make_response(redirect(f"https://dropcode.org{target}"))
+    response = make_response(redirect(f"https://hermesai.dev{target}"))
     response.set_cookie(
         "auth_token",
         app_token,

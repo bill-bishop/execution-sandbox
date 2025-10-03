@@ -60,10 +60,10 @@ body {
                 if (!res.ok) throw new Error('auth failed');
                 const user = await res.json();
                 if (!user || (user.email !== 'bill-bishop@users.noreply.github.com' &&  user.email !== 'Krigerprinsesse@users.noreply.github.com')) {
-                    window.location.href = 'https://dropcode.org/login?target=/terminal.html';
+                    window.location.href = 'https://hermesai.dev/login?target=/terminal.html';
                 }
             } catch (err) {
-                window.location.href = 'https://dropcode.org/login?target=/terminal.html';
+                window.location.href = 'https://hermesai.dev/login?target=/terminal.html';
             }
         }
         checkAuth();

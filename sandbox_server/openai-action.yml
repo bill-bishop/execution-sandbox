@@ -6,7 +6,7 @@ info:
   x-openai:
     privacy_policy_url: https://bill-bishop.github.io/execution-sandbox/privacy-policy.txt
 servers:
-  - url: https://dropcode.org
+  - url: https://hermesai.dev
     description: Public-facing sandbox API
 paths:
   /api/execute:
