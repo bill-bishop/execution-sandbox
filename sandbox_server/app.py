@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flasgger import Swagger
 from flask_jwt_extended import JWTManager
 
-from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws, auth, auth_github
+from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws, auth, auth_github, healthcheck
 from .config import API_KEY
 from .socket import socketio
 from .models import db
@@ -48,6 +48,7 @@ app.register_blueprint(read_partial.bp)
 app.register_blueprint(workspace.bp)
 app.register_blueprint(auth.bp)
 app.register_blueprint(auth_github.bp)
+app.register_blueprint(healthcheck.bp, url_prefix="/api")
 
 if __name__ == "__main__":
     with app.app_context():
