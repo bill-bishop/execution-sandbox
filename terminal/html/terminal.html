@@ -59,11 +59,19 @@ input {
     caret-color: #0f0;
     outline: none;
 }
+
+/* Make clickable links in xterm look like real links */
+.xterm a {
+    color: cyan !important;
+    text-decoration: underline !important;
+    cursor: pointer !important;
+}
     </style>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.5.0/socket.io.min.js" integrity="sha256-3mSG7UwOBvFjHfbRa4u6KJEreur0Wo24MYoixIpvcqo=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.8.0/lib/xterm-addon-web-links.min.js"></script>
 </head>
 <body>
     <div class="terminal-container">
@@ -85,7 +93,10 @@ input {
             }
         });
         const fitAddon = new FitAddon.FitAddon();
+        const webLinksAddon = new WebLinksAddon.WebLinksAddon();
         term.loadAddon(fitAddon);
+        term.loadAddon(webLinksAddon);
+
         term.open(document.getElementById('xterm'));
         fitAddon.fit();
         window.addEventListener('resize', () => fitAddon.fit());
@@ -129,6 +140,13 @@ input {
                         term.writeln(entry.line);
                     }
                 });
+
+                // HermesAI planning link (plain anchor detected by WebLinksAddon)
+                // White text, then cyan underlined link
+                term.writeln(
+                    "\u001b[37mStart Planning Changes with HermesAI: \u001b[36;4mhttps://chat.openai.com/g/g-67659602f22c81919da3c6b22b96658c-hermesai-executive-gpt\u001b[0m"
+                );
+
             } catch (err) {
                 console.error('Failed to load recent logs', err);
             }
