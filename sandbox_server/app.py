@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_cors import CORS
 from flasgger import Swagger
 from flask_jwt_extended import JWTManager
 
-from .routes import execute, execute_worker, read_file, write_file, read_partial, workspace, ws, auth, auth_github, healthcheck
+from .routes import all_blueprints
 from .config import API_KEY
 from .socket import socketio
 from .models import db
@@ -37,18 +37,12 @@ socketio.init_app(app)
 print(f"socketio id: {id(socketio)}", flush=True)
 
 # Initialize WebSocket namespace
+from .routes import ws
 ws.init_socketio(socketio)
 
-# Register Blueprints
-app.register_blueprint(execute.bp)
-app.register_blueprint(execute_worker.bp)
-app.register_blueprint(read_file.bp)
-app.register_blueprint(write_file.bp)
-app.register_blueprint(read_partial.bp)
-app.register_blueprint(workspace.bp)
-app.register_blueprint(auth.bp)
-app.register_blueprint(auth_github.bp)
-app.register_blueprint(healthcheck.bp, url_prefix="/api")
+# ✅ Register all Blueprints
+for bp in all_blueprints:
+    app.register_blueprint(bp)
 
 if __name__ == "__main__":
     with app.app_context():
