@@ -1,5 +1,5 @@
 from . import auth, execute, execute_worker, read_file, read_partial, workspace, ws, write_file
-from . import auth_github  # new module
+from . import auth_github, healthcheck
 
 all_blueprints = [
     auth.bp,
@@ -10,4 +10,5 @@ all_blueprints = [
     workspace.bp,
     write_file.bp,
     auth_github.bp,
+    healthcheck.bp,
 ]
