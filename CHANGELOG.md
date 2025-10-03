@@ -3,6 +3,10 @@
 ## [Unreleased]
 - TBD
 
+## [0.3.3] - 2025-10-02
+### Added
+- Sandbox server Dockerfile now installs `git` (via `apk add git`) so containers can execute `git` commands.
+
 ## [0.3.2] - 2025-10-02
 ### Added
 - Support for `target` passthrough in GitHub OAuth login via the `state` parameter.

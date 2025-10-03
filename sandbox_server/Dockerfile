@@ -1,8 +1,8 @@
 # Use an official Python Alpine base image
 FROM python:3.10-alpine
 
-# Install Node.js and npm (if needed for other parts)
-RUN apk add --no-cache nodejs npm chromium
+# Install Node.js, npm, Chromium, and Git
+RUN apk add --no-cache nodejs npm chromium git
 
 # Set up the working directory for server code
 WORKDIR /app
