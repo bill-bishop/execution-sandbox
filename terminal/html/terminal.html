@@ -34,32 +34,6 @@ body {
     overflow: hidden;
 }
 
-.input-area {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: #111;
-    border-top: 1px solid #0f0;
-    padding: 8px;
-}
-
-.prompt {
-    color: #0f0;
-    font-weight: bold;
-    font-size: 1.2em;
-}
-
-input {
-    flex: 1;
-    background-color: #000;
-    border: none;
-    color: #0f0;
-    font-size: 1.1em;
-    font-family: inherit;
-    caret-color: #0f0;
-    outline: none;
-}
-
 /* Make clickable links in xterm look like real links */
 .xterm a {
     color: cyan !important;
@@ -76,14 +50,25 @@ input {
 <body>
     <div class="terminal-container">
         <div id="xterm"></div>
-        <div class="input-area">
-            <span class="prompt">&gt;</span>
-            <input id="input" type="text" autofocus autocomplete="off">
-        </div>
     </div>
 
     <script>
-        // Initialize Xterm for output
+        // --- Auth check ---
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                if (!res.ok) throw new Error('auth failed');
+                const user = await res.json();
+                if (!user || (user.email !== 'bill-bishop@users.noreply.github.com' ||  user.email !== 'gracewesson@users.noreply.github.com')) {
+                    window.location.href = 'https://dropcode.org/';
+                }
+            } catch (err) {
+                window.location.href = 'https://dropcode.org/';
+            }
+        }
+        checkAuth();
+
+        // Initialize Xterm for input + output
         const term = new Terminal({
             cursorBlink: true,
             fontFamily: 'Courier New, monospace',
@@ -153,23 +138,71 @@ input {
         }
         loadRecentLogs();
 
-        // Input box handling (simple commands)
-        const input = document.getElementById('input');
-        input.addEventListener('keydown', async function (e) {
-            if (e.key === 'Enter') {
-                const command = input.value.trim();
+        // Input buffer + history handling directly in xterm
+        let inputBuffer = "";
+        let history = [];
+        let historyIndex = -1;
+
+        term.prompt = () => {
+            term.write("$ ");
+        };
+        term.prompt();
+
+        term.onKey(async e => {
+            const ev = e.domEvent;
+            const key = e.key;
+
+            if (ev.key === "Enter") {
+                const command = inputBuffer.trim();
+                term.write("\r\n");
                 if (command) {
+                    history.unshift(command);
+                    historyIndex = -1;
                     try {
-                        await fetch('/api/execute', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                        await fetch("/api/execute", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ command })
                         });
                     } catch (error) {
-                        term.writeln('\u001b[31mError: Unable to reach the server.\u001b[0m');
+                        term.writeln("\u001b[31mError: Unable to reach the server.\u001b[0m");
                     }
                 }
-                input.value = '';
+                inputBuffer = "";
+                term.prompt();
+            } else if (ev.key === "Backspace") {
+                if (inputBuffer.length > 0) {
+                    inputBuffer = inputBuffer.slice(0, -1);
+                    term.write("\b \b");
+                }
+            } else if (ev.key === "ArrowUp") {
+                if (history.length > 0) {
+                    if (historyIndex + 1 < history.length) {
+                        historyIndex++;
+                    }
+                    // Clear current line
+                    term.write("\u001b[2K\r");
+                    term.prompt();
+                    inputBuffer = history[historyIndex];
+                    term.write(inputBuffer);
+                }
+            } else if (ev.key === "ArrowDown") {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                } else {
+                    historyIndex = -1;
+                    inputBuffer = "";
+                }
+                // Clear current line
+                term.write("\u001b[2K\r");
+                term.prompt();
+                if (historyIndex >= 0) {
+                    inputBuffer = history[historyIndex];
+                    term.write(inputBuffer);
+                }
+            } else if (key.length === 1) {
+                inputBuffer += key;
+                term.write(key);
             }
         });
     </script>
