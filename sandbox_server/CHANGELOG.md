@@ -1,5 +1,16 @@
 # DropCode Sandbox Server – Changelog
 
+## v3.1.0 - 2025-10-02
+
+### Added
+- GitHub OAuth login flow now supports `target` passthrough via the `state` parameter.
+- Backend validates and redirects users back to their original target after successful login.
+
+### Security
+- Validation added to ensure only relative paths are accepted as redirect targets, preventing open redirect vulnerabilities.
+
+---
+
 ## v3.0.0
 
 ### Breaking Changes

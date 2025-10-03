@@ -3,6 +3,15 @@
 ## [Unreleased]
 - TBD
 
+## [0.3.2] - 2025-10-02
+### Added
+- Support for `target` passthrough in GitHub OAuth login via the `state` parameter.
+- Validation to ensure only relative paths are allowed as redirect targets to prevent open redirect vulnerabilities.
+- Backend now redirects users back to their original target after successful login.
+
+### Fixed
+- GitHub OAuth callback no longer hardcodes redirect to `/`. Uses validated `target` instead.
+
 ## [0.3.1] - 2025-10-02
 ### Fixed
 - ANSI formatting issues in the terminal UI.

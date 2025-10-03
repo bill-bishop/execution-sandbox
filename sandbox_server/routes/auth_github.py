@@ -13,16 +13,33 @@ GITHUB_TOKEN_URL = "https://github.com/login/oauth/access_token"
 GITHUB_USER_URL = "https://api.github.com/user"
 
 
+def _validate_target(target: str) -> str:
+    if not target:
+        return "/dashboard"
+    if target.startswith("/") and not target.startswith("//"):
+        return target
+    return "/dashboard"
+
+
 @bp.route("/auth/redirect/github")
 def github_redirect():
+    target = request.args.get("target", "/dashboard")
     redirect_uri = "https://dropcode.org/api/auth/callback/github"
-    url = f"{GITHUB_AUTHORIZE_URL}?client_id={GITHUB_CLIENT_ID}&redirect_uri={redirect_uri}&scope=read:user user:email"
+    url = (
+        f"{GITHUB_AUTHORIZE_URL}?client_id={GITHUB_CLIENT_ID}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=read:user user:email"
+        f"&state={target}"
+    )
     return redirect(url)
 
 
 @bp.route("/auth/callback/github")
 def github_callback():
     code = request.args.get("code")
+    state = request.args.get("state", "/dashboard")
+    target = _validate_target(state)
+
     if not code:
         return jsonify({"error": "Missing code"}), 400
 
@@ -60,8 +77,7 @@ def github_callback():
     # Create JWT using flask_jwt_extended
     app_token = create_access_token(identity=str(user.id))
 
-    # todo: use passthrough target
-    response = make_response(redirect("https://dropcode.org/"))
+    response = make_response(redirect(f"https://dropcode.org{target}"))
     response.set_cookie(
         "auth_token",
         app_token,
