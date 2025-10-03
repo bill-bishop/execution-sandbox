@@ -3,6 +3,10 @@
 ## [Unreleased]
 - TBD
 
+## [0.3.1] - 2025-10-02
+### Fixed
+- ANSI formatting issues in the terminal UI.
+
 ## [0.3.0] - 2025-10-02
 ### Added
 - GitHub OAuth login flow with `/auth/redirect/github` and `/auth/callback/github` routes.

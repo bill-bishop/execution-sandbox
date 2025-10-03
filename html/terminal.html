@@ -59,7 +59,7 @@ body {
                 const res = await fetch('/api/auth/me', { credentials: 'include' });
                 if (!res.ok) throw new Error('auth failed');
                 const user = await res.json();
-                if (!user || (user.email !== 'bill-bishop@users.noreply.github.com' &&  user.email !== 'Krigerprinsesse@users.noreply.github.com')) {
+                if (!user || (user.email !== 'bill-bishop@users.noreply.github.com' &&  user.email !== 'gracewesson@users.noreply.github.com')) {
                     window.location.href = 'https://dropcode.org/';
                 }
             } catch (err) {

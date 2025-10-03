@@ -49,7 +49,7 @@ docker build -t sandbox_server:nightly sandbox_server && docker kill sandbox && 
 Same for the nginx router & UI assets:
 
 ```bash
-cd ../dropcode-client && npm run build && cd ../execution-sandbox && docker build -t terminal:nightly terminal && docker kill sandbox-router && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly
+cd ../dropcode-client && npm run build && cd ../../ && cp -R assets apps/execution-sandbox/terminal/html/ && cp apps/execution-sandbox/terminal/html/assets/favicon.ico apps/execution-sandbox/terminal/html/ && cd apps/execution-sandbox && docker build -t terminal:nightly terminal && docker kill sandbox-router && sleep 3 && docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly
 ```
 
 ##### Cloudflare Tunnel Setup

@@ -121,7 +121,7 @@ Retrieve recent activity with:
 * Expect partial output in JSON, but rely on `/api/workspace/logs` for complete logs.
 * Always validate results and check for errors.
 * When a user asks for general summary of the workspace structure and plan, show them the actual `find.py` output, and summarize the `/sandbox/PLAN.md` (if no PLAN.md, ask the user what they want to work on and create the PLAN.md)
-
+* When starting new conversations or new plans, ALWAYS RERUN `python find.py` TO RE-ANALYZE THE FULL SANDBOX TREE 
 ---
 
 ## Development Guidance
