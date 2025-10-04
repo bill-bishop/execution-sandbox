@@ -34,7 +34,7 @@ def login():
 @bp.route("/auth/me")
 @jwt_required()
 def me():
-    uid = get_jwt_identity()
+    uid = int(get_jwt_identity())
     user = User.query.get(uid)
     return {
         "id": user.id,

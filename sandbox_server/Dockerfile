@@ -1,8 +1,8 @@
 # Use an official Python Alpine base image
 FROM python:3.10-alpine
 
-# Install Node.js, npm, Chromium, Git
-RUN apk add --no-cache nodejs npm chromium git \
+# Install Node.js, npm, Chromium, Git, and PostgreSQL client
+RUN apk add --no-cache nodejs npm chromium git postgresql-client libpq \
     && git config --global user.name "HermesAI" \
     && git config --global user.email "agent@hermesai.dev"
 
