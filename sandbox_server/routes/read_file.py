@@ -5,7 +5,6 @@ bp = Blueprint("read_file", __name__, url_prefix="/read")
 
 SANDBOX_DIR = "/sandbox"
 MAX_READ_SIZE = 51200  # 50 KB
-MAX_CHARS = 100_000  # Character limit for GPT-safe truncation
 
 @bp.route("", methods=["GET"])
 def read_file():
@@ -28,12 +27,8 @@ def read_file():
             else:
                 content = f.read()
 
-        if len(content) > MAX_CHARS:
-            content = content[:MAX_CHARS]
-            truncated = True
-
         if truncated:
-            content += "\n\n[TRUNCATED OUTPUT: file too large or too long. Use /read-partial to read in chunks.]"
+            content += "\n\n[TRUNCATED OUTPUT: file too large. Use /read-partial to read in chunks.]"
 
         return jsonify({"content": content, "truncated": truncated, "size": file_size})
 

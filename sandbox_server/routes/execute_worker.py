@@ -6,8 +6,7 @@ import uuid
 import select
 from flask import Blueprint, request, jsonify
 
-# Fixed import path (was: from sandbox_server import workspace_log)
-from .. import workspace_log
+from sandbox_server import workspace_log
 from ..socket import socketio
 
 bp = Blueprint("execute_worker", __name__, url_prefix="/execute/worker")
@@ -22,6 +21,7 @@ def run_command(job_id, command, pwd, on_output=None):
     if not os.path.exists(pwd):
         return 1, "Working directory does not exist"
 
+    # Read timeout dynamically (so tests can override via env)
     COMMAND_TIMEOUT = int(os.environ.get("COMMAND_TIMEOUT", 60))
 
     master_fd, slave_fd = pty.openpty()
@@ -42,6 +42,7 @@ def run_command(job_id, command, pwd, on_output=None):
     killed = False
 
     while True:
+        # Timeout check
         if time.time() - start_time > COMMAND_TIMEOUT:
             process.terminate()
             try:
@@ -61,6 +62,7 @@ def run_command(job_id, command, pwd, on_output=None):
             socketio.emit("event", event, namespace="/ws/workspace", broadcast=True)
             break
 
+        # Wait for data with shorter timeout to enforce fast checks
         rlist, _, _ = select.select([master_fd], [], [], 0.1)
         if rlist:
             try:
@@ -91,6 +93,7 @@ def run_command(job_id, command, pwd, on_output=None):
             if len(stdout_buf) < BUFFER_LIMIT:
                 stdout_buf += chunk
         else:
+            # No output, check if process ended
             if process.poll() is not None:
                 break
 
@@ -112,6 +115,7 @@ def execute_worker():
     pwd = data.get("pwd", SANDBOX_DIR)
     job_id = str(uuid.uuid4())
 
+    # Run as Socket.IO background task
     socketio.start_background_task(run_command, job_id, command, pwd)
 
     return jsonify({
