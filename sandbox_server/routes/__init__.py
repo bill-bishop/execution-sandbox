@@ -1,15 +1,3 @@
-from . import auth, execute, execute_worker, read_file, read_partial, workspace, ws, write_file
-from . import auth_github, healthcheck, canvas
-
-all_blueprints = [
-    auth.bp,
-    execute.bp,
-    execute_worker.bp,
-    read_file.bp,
-    read_partial.bp,
-    workspace.bp,
-    write_file.bp,
-    auth_github.bp,
-    healthcheck.bp,
-    canvas.bp,
-]
+def register_routes(app):
+    from .waitlist import bp as waitlist_bp
+    app.register_blueprint(waitlist_bp)
