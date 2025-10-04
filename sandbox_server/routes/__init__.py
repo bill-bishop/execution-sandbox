@@ -1,5 +1,5 @@
 from . import auth, execute, execute_worker, read_file, read_partial, workspace, ws, write_file
-from . import auth_github, healthcheck, canvas
+from . import auth_github, healthcheck, canvas, waitlist
 
 all_blueprints = [
     auth.bp,
@@ -12,4 +12,5 @@ all_blueprints = [
     auth_github.bp,
     healthcheck.bp,
     canvas.bp,
+    waitlist.waitlist_bp,
 ]
