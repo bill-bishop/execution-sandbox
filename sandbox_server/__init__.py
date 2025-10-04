@@ -1,23 +1,24 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-import os
+from flask_socketio import SocketIO
 
-db = SQLAlchemy()
-migrate = Migrate()
+# Shared workspace log singleton
+from . import workspace_log
+
+socketio = SocketIO(cors_allowed_origins="*")
+
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-        'DATABASE_URL',
-        'postgresql+psycopg2://postgres:postgres@db:5432/dropcode'
-    )
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    db.init_app(app)
-    migrate.init_app(app, db)
-
-    from .routes import register_routes
-    register_routes(app)
+    # Register blueprints
+    from .routes import execute, execute_worker, read_file, write_file, read_partial, auth, auth_github, workspace
+    app.register_blueprint(execute.bp, url_prefix="/api")
+    app.register_blueprint(execute_worker.bp, url_prefix="/api")
+    app.register_blueprint(read_file.bp, url_prefix="/api")
+    app.register_blueprint(write_file.bp, url_prefix="/api")
+    app.register_blueprint(read_partial.bp, url_prefix="/api")
+    app.register_blueprint(workspace.bp, url_prefix="/api")
+    app.register_blueprint(auth.bp, url_prefix="/api")
+    app.register_blueprint(auth_github.bp, url_prefix="/api")
 
     return app
