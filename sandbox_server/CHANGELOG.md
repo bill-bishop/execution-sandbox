@@ -1,3 +1,4 @@
+## [Unreleased]\n\n### Changed\n- Updated /read endpoint to truncate large file outputs (over 50KB) and append truncation notice.\n- Added file size and truncation metadata to /read responses.\n
 # HermesAI Sandbox Server – Changelog
 
 ## v3.1.0 - 2025-10-02
