@@ -2,9 +2,9 @@ from flask import Blueprint, request, jsonify
 from datetime import datetime
 from ..models import db, Waitlist
 
-bp = Blueprint('waitlist', __name__, url_prefix='/api')
+bp = Blueprint('waitlist', __name__, url_prefix='/waitlist')
 
-@bp.route('/waitlist', methods=['POST'])
+@bp.route('', methods=['POST'])
 def join_waitlist():
     data = request.get_json()
     email = data.get('email')

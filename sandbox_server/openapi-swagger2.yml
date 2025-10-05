@@ -8,6 +8,34 @@ basePath: /
 schemes:
   - http
 paths:
+  /waitlist:
+    post:
+      summary: Subscribe to the early access waiting list.
+      description: |
+        Hits the postgresql db and stores the email for later early-access codes
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+      responses:
+        '200':
+          description: Success response.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+      security:
+        - apiKeyAuth: []
   /execute:
     post:
       summary: Execute a bash command (wrapper).
