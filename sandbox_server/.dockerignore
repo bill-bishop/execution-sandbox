@@ -1,0 +1,27 @@
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+env/
+venv/
+.venv/
+
+# Logs & test artifacts
+*.log
+*.pytest_cache
+.coverage
+htmlcov/
+
+# OS & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build metadata
+*.egg-info/
+dist/
+build/

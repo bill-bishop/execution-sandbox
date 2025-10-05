@@ -20,6 +20,13 @@ docker build -t terminal terminal
 docker build -t terminal:nightly terminal # nightly
 ```
 
+Run the following command to build the PostreSQL Docker image:
+
+```bash
+docker build -t hermesdb database
+docker build -t hermesdb:nightly database # nightly
+```
+
 
 ##### Run Containers Within Same Network
 
@@ -31,11 +38,17 @@ docker build -t terminal:nightly terminal # nightly
    ```bash
    docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:latest
    docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env sandbox_server:nightly # nightly
+   
+   # rollback
+   docker run --rm -d --network sandbox-net --name sandbox -v %CD%/../../:/sandbox --env-file .env hermesai-backend:rollback
    ```
 3. Start the Nginx router in this network, exposing port 80:
    ```bash
    docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:latest
    docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 terminal:nightly # nightly
+   
+   # rollback
+   docker run --rm -d --network sandbox-net --name sandbox-router -p 80:80 hermesai-router:rollback
    ```
 
 ##### Testing Nightly Version
