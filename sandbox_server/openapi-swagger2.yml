@@ -3,8 +3,8 @@ info:
   title: Sandbox API
   description: A unified API for executing commands, reading files, writing files, and viewing logs in a sandboxed environment.
   version: 2.0.0
-host: localhost:8080
-basePath: /
+host: localhost:80
+basePath: /api/
 schemes:
   - http
 paths:
