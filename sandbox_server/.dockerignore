@@ -23,5 +23,5 @@ Thumbs.db
 
 # Build metadata
 *.egg-info/
-dist/
 build/
+test-out
