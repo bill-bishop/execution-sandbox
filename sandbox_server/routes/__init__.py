@@ -10,7 +10,7 @@ all_blueprints = [
     # workspace.bp,
     # write_file.bp,
     # auth_github.bp,
-    # healthcheck.bp,
+    healthcheck.bp,
     # canvas.bp,
     waitlist.bp,
 ]
