@@ -110,3 +110,24 @@ Expose your local Nginx server via a Cloudflare Tunnel. Make sure you have a Clo
 
 
 Now your sandbox is accessible through your public domain secured by Cloudflare Tunnel.
+
+
+
+##### New steps:
+
+from monorepo root: `docker compose build` and `docker compose up` -> view http://localhost:80
+
+##### Digital Ocean: Docker Droplet Deployment
+
+File sync to Docker Droplet: (temp til we have image repo based deployments):
+
+from the parent folder above the monorepo:
+```bash
+wsl -d Ubuntu 
+rsync -vhra ./dropcode-monorepo root@DROPLET_IP:/app --include='**.gitignore' --exclude='/.git' --filter=':- .gitignore'
+```
+
+This command tries to respect gitignore to avoid massive sync of unneeded files 
+before rsync you must generate an ssh key and ensure the public key is in your droplet server's authorized_clients 
+
+after this you can ssh into your droplet and `docker compose up` from the project dir 
