@@ -131,3 +131,10 @@ This command tries to respect gitignore to avoid massive sync of unneeded files
 before rsync you must generate an ssh key and ensure the public key is in your droplet server's authorized_clients 
 
 after this you can ssh into your droplet and `docker compose up` from the project dir 
+
+local db backup
+
+```bash
+wsl -d Ubuntu 
+rsync -vhra root@DROPLET_IP:/app/dropcode-monorepo/apps/execution-sandbox/sandbox_server/sandbox.db ./sandbox.backup.db
+```
