@@ -121,10 +121,10 @@ from monorepo root: `docker compose build` and `docker compose up` -> view http:
 
 File sync to Docker Droplet: (temp til we have image repo based deployments):
 
-from the parent folder above the monorepo:
+from the monorepo root:
 ```bash
 wsl -d Ubuntu 
-rsync -vhra ./dropcode-monorepo root@DROPLET_IP:/app --include='**.gitignore' --exclude='/.git' --filter=':- .gitignore'
+rsync -vhra ./docker-compose.yml root@DROPLET_IP:/app/docker-compose.yml
 ```
 
 This command tries to respect gitignore to avoid massive sync of unneeded files 
